@@ -22,27 +22,27 @@ const products = [
 
 const FeaturedProducts = () => {
   return (
-    <section className="py-24 bg-gray-50">
+    <section className="py-32 bg-gray-50">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4">Featured Products</h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+        <div className="text-center mb-20">
+          <h2 className="text-5xl font-bold mb-6">Featured Products</h2>
+          <p className="text-gray-600 max-w-2xl mx-auto text-lg">
             Discover our handpicked selection of premium boxing gear, designed for maximum performance and comfort.
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {products.map((product) => (
-            <div key={product.id} className="group hover-scale">
-              <div className="relative aspect-square overflow-hidden rounded-lg mb-4">
+            <div key={product.id} className="group hover-lift">
+              <div className="relative aspect-square overflow-hidden rounded-2xl mb-6 bg-gray-100">
                 <img
                   src={product.image}
                   alt={product.name}
-                  className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+                  className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
                 />
               </div>
-              <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
-              <p className="text-gray-900">{product.price}</p>
+              <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
+              <p className="text-gray-900 font-medium">{product.price}</p>
             </div>
           ))}
         </div>

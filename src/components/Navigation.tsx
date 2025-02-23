@@ -21,28 +21,28 @@ const Navigation = () => {
       }`}
     >
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
           <div className="flex items-center gap-8">
-            <a href="/" className="text-2xl font-bold tracking-tighter">
+            <a href="/" className="text-2xl font-bold tracking-tighter hover:opacity-80 transition-opacity">
               BOXEGEAR
             </a>
-            <div className="hidden md:flex items-center gap-6">
-              <a href="#" className="hover:text-gray-600 transition-colors">
+            <div className="hidden md:flex items-center gap-8">
+              <a href="#" className="hover:text-gray-600 transition-colors font-medium">
                 Shop
               </a>
-              <a href="#" className="hover:text-gray-600 transition-colors">
+              <a href="#" className="hover:text-gray-600 transition-colors font-medium">
                 Customize
               </a>
-              <a href="#" className="hover:text-gray-600 transition-colors">
+              <a href="#" className="hover:text-gray-600 transition-colors font-medium">
                 About
               </a>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <div className="flex items-center gap-6">
+            <button className="p-2.5 hover:bg-gray-100 rounded-full transition-all duration-300 hover:scale-105">
               <ShoppingCart className="h-5 w-5" />
             </button>
-            <button className="md:hidden p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <button className="md:hidden p-2.5 hover:bg-gray-100 rounded-full transition-all duration-300 hover:scale-105">
               <Menu className="h-5 w-5" />
             </button>
           </div>
