@@ -1,4 +1,6 @@
 
+import { Link } from "react-router-dom";
+
 const Hero = () => {
   return (
     <section className="min-h-screen relative overflow-hidden flex items-center">
@@ -19,9 +21,12 @@ const Hero = () => {
             Designed for champions, crafted for excellence.
           </p>
           <div className="flex flex-col sm:flex-row gap-6">
-            <button className="px-8 py-4 bg-white text-black font-medium rounded-lg hover:bg-white/90 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 text-lg animate-fade-in">
+            <Link
+              to="/catalog"
+              className="px-8 py-4 bg-white text-black font-medium rounded-lg hover:bg-white/90 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 text-lg animate-fade-in inline-block text-center"
+            >
               Shop Collection
-            </button>
+            </Link>
             <button className="px-8 py-4 bg-black/20 backdrop-blur-lg text-white font-medium rounded-lg hover:bg-black/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 text-lg animate-fade-in border border-white/20">
               Customize Gear
             </button>
