@@ -6,8 +6,11 @@ interface ProductCardProps {
     id: number;
     name: string;
     price: string;
+    originalPrice?: string;
     image: string;
     category: string;
+    color: string;
+    size: string;
   };
   className?: string;
 }
@@ -27,7 +30,17 @@ const ProductCard = ({ product, className }: ProductCardProps) => {
           {product.category}
         </span>
         <h3 className="text-xl font-semibold">{product.name}</h3>
-        <p className="text-gray-900 font-medium">{product.price}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-gray-900 font-medium">{product.price}</p>
+          {product.originalPrice && (
+            <p className="text-gray-500 line-through text-sm">{product.originalPrice}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <span>Color: {product.color}</span>
+          <span>•</span>
+          <span>Size: {product.size}</span>
+        </div>
       </div>
     </div>
   );
