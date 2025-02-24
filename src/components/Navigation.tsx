@@ -29,26 +29,26 @@ const Navigation = () => {
         <div className="flex items-center justify-between h-20">
           <div className="flex items-center gap-8">
             <Link to="/" className={`text-2xl font-bold tracking-tighter hover:opacity-80 transition-opacity ${isLight && !isScrolled ? 'text-white' : 'text-black'}`}>
-              BOXEGEAR
+              PUGIL
             </Link>
             <div className="hidden md:flex items-center gap-8">
               <Link
                 to="/catalog"
                 className={`hover:text-gray-600 transition-colors font-medium ${isLight && !isScrolled ? 'text-white' : 'text-black'}`}
               >
-                Shop
+                Catálogo
               </Link>
               <Link
                 to="/customize"
                 className={`hover:text-gray-600 transition-colors font-medium ${isLight && !isScrolled ? 'text-white' : 'text-black'}`}
               >
-                Customize
+                Personalizar
               </Link>
               <Link
                 to="#"
                 className={`hover:text-gray-600 transition-colors font-medium ${isLight && !isScrolled ? 'text-white' : 'text-black'}`}
               >
-                About
+                Sobre
               </Link>
             </div>
           </div>

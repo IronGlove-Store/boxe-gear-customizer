@@ -43,9 +43,9 @@ const ProductCard = ({ product, className }: ProductCardProps) => {
           )}
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-600">
-          <span>Color: {product.color}</span>
+          <span>Cor: {product.color}</span>
           <span>•</span>
-          <span>Size: {product.size}</span>
+          <span>Tamanho: {product.size}</span>
         </div>
       </div>
     </div>

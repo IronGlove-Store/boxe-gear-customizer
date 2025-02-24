@@ -73,7 +73,7 @@ const ProductCustomizer = () => {
       id: Date.now(), // Unique ID for custom items
       name: `Custom ${colorName} ${selectedMaterial.name} Boxing Gloves`,
       price: `$${selectedMaterial.price.toFixed(2)}`,
-      image: "https://images.unsplash.com/photo-1583473848882-f9a5cb6c5ae7?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+      image: "https://i.pinimg.com/736x/dc/80/d2/dc80d2e7e16b190879ba968e9a364705.jpg",
       quantity: 1,
       size: customization.size
     });
@@ -208,10 +208,10 @@ const ProductCustomizer = () => {
   return (
     <div ref={mountRef} className="w-full h-screen">
       <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm p-6 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold mb-6">Customize Your Gear</h2>
+        <h2 className="text-2xl font-bold mb-6">Personaliza o teu equipamento</h2>
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium mb-3">Color</label>
+            <label className="block text-sm font-medium mb-3">Cor</label>
             <div className="flex gap-3">
               {colors.map((color) => (
                 <button
@@ -250,7 +250,7 @@ const ProductCustomizer = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-3">Size</label>
+            <label className="block text-sm font-medium mb-3">Tamanho</label>
             <div className="flex flex-wrap gap-3">
               {sizes.map((size) => (
                 <button
@@ -271,7 +271,7 @@ const ProductCustomizer = () => {
         
         <div className="mt-6 pt-6 border-t space-y-4">
           <p className="text-sm text-gray-500">
-            Drag to rotate • Scroll to zoom
+            Puxa para mover • Scroll para zoom
           </p>
           <Button 
             className="w-full" 
@@ -279,7 +279,7 @@ const ProductCustomizer = () => {
             onClick={handleAddToCart}
           >
             <ShoppingCart className="mr-2 h-5 w-5" />
-            Add to Cart
+            Adicionar ao carrinho
           </Button>
         </div>
       </div>
