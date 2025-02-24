@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from "react";
-import { ShoppingCart, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { Cart } from "./Cart";
 
 const Navigation = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -52,9 +53,7 @@ const Navigation = () => {
             </div>
           </div>
           <div className="flex items-center gap-6">
-            <button className={`p-2.5 rounded-full transition-all duration-300 hover:scale-105 ${isLight && !isScrolled ? 'text-white hover:bg-white/10' : 'text-black hover:bg-gray-100'}`}>
-              <ShoppingCart className="h-5 w-5" />
-            </button>
+            <Cart />
             <button className={`md:hidden p-2.5 rounded-full transition-all duration-300 hover:scale-105 ${isLight && !isScrolled ? 'text-white hover:bg-white/10' : 'text-black hover:bg-gray-100'}`}>
               <Menu className="h-5 w-5" />
             </button>

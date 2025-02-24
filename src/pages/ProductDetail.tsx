@@ -1,9 +1,11 @@
+
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ShoppingCart } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useCart } from "@/contexts/CartContext";
 
 interface Product {
   id: number;
@@ -66,6 +68,7 @@ const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { addItem } = useCart();
   const [selectedSize, setSelectedSize] = useState<string>("");
   
   const product = products.find(p => p.id === Number(id));
@@ -105,9 +108,13 @@ const ProductDetail = () => {
       return;
     }
     
-    toast({
-      title: "Added to cart",
-      description: `${product.name} has been added to your cart.`,
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      quantity: 1,
+      size: selectedSize,
     });
   };
 
