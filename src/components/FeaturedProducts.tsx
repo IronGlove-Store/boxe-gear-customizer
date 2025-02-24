@@ -25,9 +25,9 @@ const FeaturedProducts = () => {
     <section className="py-32 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-20">
-          <h2 className="text-5xl font-bold mb-6">Featured Products</h2>
+          <h2 className="text-5xl font-bold mb-6">Produtos em Destaque</h2>
           <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-            Discover our handpicked selection of premium boxing gear, designed for maximum performance and comfort.
+            Os melhores, para o melhor.
           </p>
         </div>
         

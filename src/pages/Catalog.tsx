@@ -20,7 +20,7 @@ interface Product {
 const products: Product[] = [
   {
     id: 1,
-    name: "Pro Boxing Gloves",
+    name: "Teste",
     price: "$199.99",
     category: "Gloves",
     color: "red",
@@ -29,7 +29,7 @@ const products: Product[] = [
   },
   {
     id: 2,
-    name: "Elite Red Headgear",
+    name: "Teste2",
     price: "$89.99",
     category: "Protection",
     color: "red",
@@ -38,7 +38,7 @@ const products: Product[] = [
   },
   {
     id: 3,
-    name: "Black Performance Wraps",
+    name: "Teste3",
     price: "$24.99",
     originalPrice: "$29.99",
     category: "Accessories",
@@ -48,7 +48,7 @@ const products: Product[] = [
   },
   {
     id: 4,
-    name: "Blue Training Bag",
+    name: "Teste4",
     price: "$149.99",
     category: "Equipment",
     color: "blue",
@@ -137,7 +137,7 @@ const Catalog = () => {
                     onChange={(e) => setSelectedColor(e.target.value)}
                     className="px-4 py-2 rounded-lg border bg-white"
                   >
-                    <option value="" disabled>Color</option>
+                    <option value="" disabled>Cor</option>
                     {colors.map(color => (
                       <option key={color} value={color}>{color}</option>
                     ))}
@@ -148,7 +148,7 @@ const Catalog = () => {
                     onChange={(e) => setSelectedSize(e.target.value)}
                     className="px-4 py-2 rounded-lg border bg-white"
                   >
-                    <option value="" disabled>Size</option>
+                    <option value="" disabled>Tamanho</option>
                     {sizes.map(size => (
                       <option key={size} value={size}>{size}</option>
                     ))}
@@ -160,8 +160,8 @@ const Catalog = () => {
                     className="px-4 py-2 rounded-lg border bg-white"
                   >
                     <option value="featured">Featured</option>
-                    <option value="price-asc">Price: Low to High</option>
-                    <option value="price-desc">Price: High to Low</option>
+                    <option value="price-asc">Preço: Baixo para Alto</option>
+                    <option value="price-desc">Preço: Alto to Baixo</option>
                   </select>
                 </div>
               </div>
