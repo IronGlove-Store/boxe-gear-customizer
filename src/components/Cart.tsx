@@ -1,4 +1,3 @@
-
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
@@ -19,7 +18,7 @@ export function Cart() {
           )}
         </button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-lg">
+      <SheetContent className="w-full sm:max-w-md">
         <SheetHeader>
           <SheetTitle>Shopping Cart</SheetTitle>
         </SheetHeader>

@@ -1,10 +1,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { useCart } from '@/contexts/CartContext';
+import { Button } from '@/components/ui/button';
+import { ShoppingCart } from 'lucide-react';
 
 interface CustomizationState {
   color: string;
   material: string;
+  size: string;
 }
 
 const ProductCustomizer = () => {
@@ -15,10 +19,12 @@ const ProductCustomizer = () => {
   const gloveRef = useRef<THREE.Mesh | null>(null);
   const isDraggingRef = useRef(false);
   const previousMousePositionRef = useRef({ x: 0, y: 0 });
+  const { addItem } = useCart();
 
   const [customization, setCustomization] = useState<CustomizationState>({
     color: '#ff0000',
-    material: 'leather'
+    material: 'leather',
+    size: '12oz'
   });
 
   const colors = [
@@ -30,10 +36,16 @@ const ProductCustomizer = () => {
   ];
 
   const materials = [
-    { name: 'Leather', value: 'leather', roughness: 0.5, metalness: 0.0 },
-    { name: 'Patent Leather', value: 'patent', roughness: 0.1, metalness: 0.3 },
-    { name: 'Canvas', value: 'canvas', roughness: 0.9, metalness: 0.0 },
-    { name: 'Synthetic', value: 'synthetic', roughness: 0.3, metalness: 0.1 }
+    { name: 'Leather', value: 'leather', roughness: 0.5, metalness: 0.0, price: 199.99 },
+    { name: 'Patent Leather', value: 'patent', roughness: 0.1, metalness: 0.3, price: 249.99 },
+    { name: 'Canvas', value: 'canvas', roughness: 0.9, metalness: 0.0, price: 149.99 },
+    { name: 'Synthetic', value: 'synthetic', roughness: 0.3, metalness: 0.1, price: 179.99 }
+  ];
+
+  const sizes = [
+    { name: '12oz', value: '12oz' },
+    { name: '14oz', value: '14oz' },
+    { name: '16oz', value: '16oz' }
   ];
 
   const updateMaterial = () => {
@@ -49,6 +61,22 @@ const ProductCustomizer = () => {
     });
 
     gloveRef.current.material = material;
+  };
+
+  const handleAddToCart = () => {
+    const selectedMaterial = materials.find(m => m.value === customization.material);
+    if (!selectedMaterial) return;
+
+    const colorName = colors.find(c => c.value === customization.color)?.name || 'Custom';
+    
+    addItem({
+      id: Date.now(), // Unique ID for custom items
+      name: `Custom ${colorName} ${selectedMaterial.name} Boxing Gloves`,
+      price: `$${selectedMaterial.price.toFixed(2)}`,
+      image: "https://images.unsplash.com/photo-1583473848882-f9a5cb6c5ae7?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+      quantity: 1,
+      size: customization.size
+    });
   };
 
   useEffect(() => {
@@ -173,7 +201,6 @@ const ProductCustomizer = () => {
     };
   }, []);
 
-  // Update material when customization changes
   useEffect(() => {
     updateMaterial();
   }, [customization]);
@@ -215,17 +242,45 @@ const ProductCustomizer = () => {
                       : 'bg-white hover:bg-gray-100'
                   }`}
                 >
-                  {material.name}
+                  <div>{material.name}</div>
+                  <div className="text-sm opacity-75">${material.price}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-3">Size</label>
+            <div className="flex flex-wrap gap-3">
+              {sizes.map((size) => (
+                <button
+                  key={size.value}
+                  onClick={() => setCustomization(prev => ({ ...prev, size: size.value }))}
+                  className={`px-4 py-2 rounded-lg border transition-all ${
+                    customization.size === size.value
+                      ? 'border-black bg-black text-white'
+                      : 'border-gray-200 hover:border-black'
+                  }`}
+                >
+                  {size.name}
                 </button>
               ))}
             </div>
           </div>
         </div>
         
-        <div className="mt-6 pt-6 border-t">
+        <div className="mt-6 pt-6 border-t space-y-4">
           <p className="text-sm text-gray-500">
             Drag to rotate • Scroll to zoom
           </p>
+          <Button 
+            className="w-full" 
+            size="lg"
+            onClick={handleAddToCart}
+          >
+            <ShoppingCart className="mr-2 h-5 w-5" />
+            Add to Cart
+          </Button>
         </div>
       </div>
     </div>
