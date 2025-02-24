@@ -1,5 +1,6 @@
 
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 interface ProductCardProps {
   product: {
@@ -16,8 +17,13 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, className }: ProductCardProps) => {
+  const navigate = useNavigate();
+
   return (
-    <div className={cn("group hover-lift", className)}>
+    <div 
+      className={cn("group hover-lift cursor-pointer", className)}
+      onClick={() => navigate(`/product/${product.id}`)}
+    >
       <div className="relative aspect-square overflow-hidden rounded-2xl mb-6 bg-gray-100">
         <img
           src={product.image}
