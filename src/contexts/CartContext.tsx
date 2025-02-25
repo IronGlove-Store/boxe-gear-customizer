@@ -47,8 +47,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (existingItem) {
         toast({
-          title: "Item updated",
-          description: `${product.name} quantity updated in cart.`,
+          title: "Item atualizado",
+          description: `${product.name} atualizado no carrinho.`,
         });
 
         return currentItems.map(item =>
@@ -59,8 +59,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
 
       toast({
-        title: "Item added",
-        description: `${product.name} added to cart.`,
+        title: "Item adicionado",
+        description: `${product.name} adicionado ao carrinho.`,
       });
 
       return [...currentItems, product];
@@ -92,11 +92,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const getCartTotal = () => {
     const total = items.reduce((sum, item) => {
-      const price = parseFloat(item.price.replace("$", ""));
+      const price = parseFloat(item.price.replace("R$", ""));
       return sum + (price * item.quantity);
     }, 0);
     
-    return `$${total.toFixed(2)}`;
+    return `R$ ${total.toFixed(2)}`;
   };
 
   return (

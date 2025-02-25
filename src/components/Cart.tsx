@@ -1,3 +1,4 @@
+
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
@@ -20,13 +21,13 @@ export function Cart() {
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>Shopping Cart</SheetTitle>
+          <SheetTitle>Carrinho de Compras</SheetTitle>
         </SheetHeader>
         
         <div className="mt-8 flex flex-col h-full">
           {items.length === 0 ? (
             <div className="flex-1 flex items-center justify-center">
-              <p className="text-gray-500">Your cart is empty</p>
+              <p className="text-gray-500">Seu carrinho está vazio</p>
             </div>
           ) : (
             <>
@@ -40,7 +41,7 @@ export function Cart() {
                     />
                     <div className="flex-1">
                       <h3 className="font-medium">{item.name}</h3>
-                      <p className="text-sm text-gray-500">Size: {item.size}</p>
+                      <p className="text-sm text-gray-500">Tamanho: {item.size}</p>
                       <p className="text-sm font-medium">{item.price}</p>
                       
                       <div className="flex items-center gap-2 mt-2">
@@ -75,7 +76,7 @@ export function Cart() {
                   <span>{getCartTotal()}</span>
                 </div>
                 <Button className="w-full" size="lg">
-                  Checkout
+                  Finalizar Compra
                 </Button>
               </div>
             </>
