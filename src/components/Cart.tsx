@@ -3,9 +3,74 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
+import { stripe } from "@/lib/stripe";
+import { useUser } from "@clerk/clerk-react";
 
 export function Cart() {
   const { items, removeItem, updateQuantity, getCartTotal } = useCart();
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const { toast } = useToast();
+  const { isSignedIn } = useUser();
+
+  const handleCheckout = async () => {
+    if (!isSignedIn) {
+      toast({
+        title: "Atenção",
+        description: "Você precisa estar logado para finalizar a compra.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsCheckingOut(true);
+      
+      // Criar uma sessão de checkout
+      const stripeInstance = await stripe;
+      if (!stripeInstance) throw new Error("Falha ao carregar Stripe");
+
+      // Formatar os itens para o Stripe
+      const lineItems = items.map(item => ({
+        price_data: {
+          currency: 'brl',
+          product_data: {
+            name: item.name,
+            description: `Tamanho: ${item.size}`,
+            images: [item.image],
+          },
+          unit_amount: Math.round(parseFloat(item.price.replace("R$", "")) * 100), // Converter para centavos
+        },
+        quantity: item.quantity,
+      }));
+
+      // Redirecionar para o checkout do Stripe
+      const { error } = await stripeInstance.redirectToCheckout({
+        mode: 'payment',
+        lineItems,
+        successUrl: `${window.location.origin}/success`,
+        cancelUrl: `${window.location.origin}/catalog`,
+      });
+
+      if (error) {
+        toast({
+          title: "Erro",
+          description: "Houve um erro ao processar o pagamento. Tente novamente.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Erro no checkout:', error);
+      toast({
+        title: "Erro",
+        description: "Houve um erro ao processar o pagamento. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
 
   return (
     <Sheet>
@@ -75,8 +140,13 @@ export function Cart() {
                   <span>Total</span>
                   <span>{getCartTotal()}</span>
                 </div>
-                <Button className="w-full" size="lg">
-                  Finalizar Compra
+                <Button 
+                  className="w-full" 
+                  size="lg"
+                  onClick={handleCheckout}
+                  disabled={isCheckingOut}
+                >
+                  {isCheckingOut ? "Processando..." : "Finalizar Compra"}
                 </Button>
               </div>
             </>
