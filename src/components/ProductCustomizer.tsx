@@ -4,8 +4,10 @@ import * as THREE from 'three';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart } from 'lucide-react';
+import productsData from '@/data/customizableProducts.json';
 
 interface CustomizationState {
+  category: string;
   color: string;
   material: string;
   size: string;
@@ -16,42 +18,24 @@ const ProductCustomizer = () => {
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const gloveRef = useRef<THREE.Mesh | null>(null);
+  const modelRef = useRef<THREE.Mesh | null>(null);
   const isDraggingRef = useRef(false);
   const previousMousePositionRef = useRef({ x: 0, y: 0 });
   const { addItem } = useCart();
 
   const [customization, setCustomization] = useState<CustomizationState>({
-    color: '#ff0000',
-    material: 'leather',
-    size: '12oz'
+    category: productsData.categories[0].id,
+    color: productsData.colors[0].value,
+    material: productsData.materials[0].value,
+    size: productsData.categories[0].sizes[0]
   });
 
-  const colors = [
-    { name: 'Red', value: '#ff0000' },
-    { name: 'Blue', value: '#0000ff' },
-    { name: 'Black', value: '#000000' },
-    { name: 'White', value: '#ffffff' },
-    { name: 'Gold', value: '#ffd700' }
-  ];
-
-  const materials = [
-    { name: 'Leather', value: 'leather', roughness: 0.5, metalness: 0.0, price: 199.99 },
-    { name: 'Patent Leather', value: 'patent', roughness: 0.1, metalness: 0.3, price: 249.99 },
-    { name: 'Canvas', value: 'canvas', roughness: 0.9, metalness: 0.0, price: 149.99 },
-    { name: 'Synthetic', value: 'synthetic', roughness: 0.3, metalness: 0.1, price: 179.99 }
-  ];
-
-  const sizes = [
-    { name: '12oz', value: '12oz' },
-    { name: '14oz', value: '14oz' },
-    { name: '16oz', value: '16oz' }
-  ];
+  const currentCategory = productsData.categories.find(c => c.id === customization.category);
 
   const updateMaterial = () => {
-    if (!gloveRef.current) return;
+    if (!modelRef.current) return;
 
-    const materialConfig = materials.find(m => m.value === customization.material);
+    const materialConfig = productsData.materials.find(m => m.value === customization.material);
     if (!materialConfig) return;
 
     const material = new THREE.MeshStandardMaterial({
@@ -60,20 +44,24 @@ const ProductCustomizer = () => {
       metalness: materialConfig.metalness,
     });
 
-    gloveRef.current.material = material;
+    modelRef.current.material = material;
   };
 
   const handleAddToCart = () => {
-    const selectedMaterial = materials.find(m => m.value === customization.material);
+    if (!currentCategory) return;
+    
+    const selectedMaterial = productsData.materials.find(m => m.value === customization.material);
+    const colorName = productsData.colors.find(c => c.value === customization.color)?.name || 'Personalizado';
+    
     if (!selectedMaterial) return;
 
-    const colorName = colors.find(c => c.value === customization.color)?.name || 'Custom';
+    const price = currentCategory.basePrice * selectedMaterial.priceMultiplier;
     
     addItem({
-      id: Date.now(), // Unique ID for custom items
-      name: `Custom ${colorName} ${selectedMaterial.name} Boxing Gloves`,
-      price: `$${selectedMaterial.price.toFixed(2)}`,
-      image: "https://i.pinimg.com/736x/dc/80/d2/dc80d2e7e16b190879ba968e9a364705.jpg",
+      id: Date.now(),
+      name: `${colorName} ${selectedMaterial.name} ${currentCategory.name}`,
+      price: `R$ ${price.toFixed(2)}`,
+      image: currentCategory.image,
       quantity: 1,
       size: customization.size
     });
@@ -113,16 +101,16 @@ const ProductCustomizer = () => {
     directionalLight.castShadow = true;
     scene.add(directionalLight);
 
-    // Add a boxing glove (using a more complex geometry)
-    const geometry = new THREE.BoxGeometry(2, 2, 2, 32, 32, 32);
+    // Add initial model
+    const geometry = new THREE.BoxGeometry(2, 2, 2);
     const material = new THREE.MeshStandardMaterial({
       color: new THREE.Color(customization.color),
       roughness: 0.5,
       metalness: 0.0
     });
-    const glove = new THREE.Mesh(geometry, material);
-    gloveRef.current = glove;
-    scene.add(glove);
+    const model = new THREE.Mesh(geometry, material);
+    modelRef.current = model;
+    scene.add(model);
 
     // Mouse controls
     const handleMouseDown = (e: MouseEvent) => {
@@ -134,15 +122,15 @@ const ProductCustomizer = () => {
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDraggingRef.current || !gloveRef.current) return;
+      if (!isDraggingRef.current || !modelRef.current) return;
 
       const deltaMove = {
         x: e.clientX - previousMousePositionRef.current.x,
         y: e.clientY - previousMousePositionRef.current.y
       };
 
-      gloveRef.current.rotation.y += deltaMove.x * 0.01;
-      gloveRef.current.rotation.x += deltaMove.y * 0.01;
+      modelRef.current.rotation.y += deltaMove.x * 0.01;
+      modelRef.current.rotation.x += deltaMove.y * 0.01;
 
       previousMousePositionRef.current = {
         x: e.clientX,
@@ -196,7 +184,9 @@ const ProductCustomizer = () => {
       window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('wheel', handleWheel);
       window.removeEventListener('resize', handleResize);
-      mountRef.current?.removeChild(renderer.domElement);
+      if (mountRef.current && renderer.domElement) {
+        mountRef.current.removeChild(renderer.domElement);
+      }
       scene.clear();
     };
   }, []);
@@ -207,13 +197,36 @@ const ProductCustomizer = () => {
 
   return (
     <div ref={mountRef} className="w-full h-screen">
-      <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm p-6 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold mb-6">Personaliza o teu equipamento</h2>
+      <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm p-6 rounded-lg shadow-lg max-w-md">
+        <h2 className="text-2xl font-bold mb-6">Personalize seu Equipamento</h2>
         <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium mb-3">Produto</label>
+            <div className="grid grid-cols-2 gap-3">
+              {productsData.categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setCustomization(prev => ({
+                    ...prev,
+                    category: category.id,
+                    size: category.sizes[0]
+                  }))}
+                  className={`p-4 rounded-lg border transition-all ${
+                    customization.category === category.id
+                      ? 'border-black bg-black text-white'
+                      : 'border-gray-200 hover:border-black'
+                  }`}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium mb-3">Cor</label>
             <div className="flex gap-3">
-              {colors.map((color) => (
+              {productsData.colors.map((color) => (
                 <button
                   key={color.value}
                   onClick={() => setCustomization(prev => ({ ...prev, color: color.value }))}
@@ -232,7 +245,7 @@ const ProductCustomizer = () => {
           <div>
             <label className="block text-sm font-medium mb-3">Material</label>
             <div className="grid grid-cols-2 gap-3">
-              {materials.map((material) => (
+              {productsData.materials.map((material) => (
                 <button
                   key={material.value}
                   onClick={() => setCustomization(prev => ({ ...prev, material: material.value }))}
@@ -243,35 +256,41 @@ const ProductCustomizer = () => {
                   }`}
                 >
                   <div>{material.name}</div>
-                  <div className="text-sm opacity-75">${material.price}</div>
+                  {currentCategory && (
+                    <div className="text-sm opacity-75">
+                      R$ {(currentCategory.basePrice * material.priceMultiplier).toFixed(2)}
+                    </div>
+                  )}
                 </button>
               ))}
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-3">Tamanho</label>
-            <div className="flex flex-wrap gap-3">
-              {sizes.map((size) => (
-                <button
-                  key={size.value}
-                  onClick={() => setCustomization(prev => ({ ...prev, size: size.value }))}
-                  className={`px-4 py-2 rounded-lg border transition-all ${
-                    customization.size === size.value
-                      ? 'border-black bg-black text-white'
-                      : 'border-gray-200 hover:border-black'
-                  }`}
-                >
-                  {size.name}
-                </button>
-              ))}
+          {currentCategory && (
+            <div>
+              <label className="block text-sm font-medium mb-3">Tamanho</label>
+              <div className="flex flex-wrap gap-3">
+                {currentCategory.sizes.map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => setCustomization(prev => ({ ...prev, size }))}
+                    className={`px-4 py-2 rounded-lg border transition-all ${
+                      customization.size === size
+                        ? 'border-black bg-black text-white'
+                        : 'border-gray-200 hover:border-black'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
         
         <div className="mt-6 pt-6 border-t space-y-4">
           <p className="text-sm text-gray-500">
-            Puxa para mover • Scroll para zoom
+            Arraste para girar • Use o scroll para zoom
           </p>
           <Button 
             className="w-full" 
@@ -279,7 +298,7 @@ const ProductCustomizer = () => {
             onClick={handleAddToCart}
           >
             <ShoppingCart className="mr-2 h-5 w-5" />
-            Adicionar ao carrinho
+            Adicionar ao Carrinho
           </Button>
         </div>
       </div>
