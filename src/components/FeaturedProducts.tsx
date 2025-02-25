@@ -2,21 +2,21 @@
 const products = [
   {
     id: 1,
-    name: "Pro Boxing Gloves",
+    name: "Teste",
     price: "$199.99",
-    image: "https://images.unsplash.com/photo-1583473848882-f9a5cb6c5ae7?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+    image: "https://i.pinimg.com/736x/dc/80/d2/dc80d2e7e16b190879ba968e9a364705.jpg"
   },
   {
     id: 2,
     name: "Elite Headgear",
     price: "$89.99",
-    image: "https://images.unsplash.com/photo-1584464457692-54f6b2cd5ca3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+    image: "https://i.pinimg.com/736x/dc/80/d2/dc80d2e7e16b190879ba968e9a364705.jpg"
   },
   {
     id: 3,
-    name: "Performance Wraps",
+    name: "Teste",
     price: "$24.99",
-    image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+    image: "https://i.pinimg.com/736x/dc/80/d2/dc80d2e7e16b190879ba968e9a364705.jpg"
   }
 ];
 

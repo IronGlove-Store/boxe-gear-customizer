@@ -4,7 +4,7 @@
     {
       "id": "gloves",
       "name": "Luvas",
-      "image": "https://images.unsplash.com/photo-1583473848882-f9a5cb6c5ae7",
+      "image": "https://i.pinimg.com/736x/dc/80/d2/dc80d2e7e16b190879ba968e9a364705.jpg",
       "basePrice": 149.99,
       "sizes": ["12oz", "14oz", "16oz"],
       "scale": 2
@@ -12,7 +12,7 @@
     {
       "id": "helmets",
       "name": "Capacetes",
-      "image": "https://images.unsplash.com/photo-1584464457692-54f6b2cd5ca3",
+      "image": "https://i.pinimg.com/736x/dc/80/d2/dc80d2e7e16b190879ba968e9a364705.jpg",
       "basePrice": 129.99,
       "sizes": ["P", "M", "G", "GG"],
       "scale": 2.5
@@ -20,7 +20,7 @@
     {
       "id": "shirts",
       "name": "Camisetas",
-      "image": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b",
+      "image": "https://i.pinimg.com/736x/dc/80/d2/dc80d2e7e16b190879ba968e9a364705.jpg",
       "basePrice": 49.99,
       "sizes": ["P", "M", "G", "GG"],
       "scale": 1.5
@@ -28,7 +28,7 @@
     {
       "id": "bags",
       "name": "Bolsas",
-      "image": "https://images.unsplash.com/photo-1584464457692-54f6b2cd5ca3",
+      "image": "https://i.pinimg.com/736x/dc/80/d2/dc80d2e7e16b190879ba968e9a364705.jpg",
       "basePrice": 89.99,
       "sizes": ["Único"],
       "scale": 3

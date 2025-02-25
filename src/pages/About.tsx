@@ -10,19 +10,19 @@ const About = () => {
         
         <section className="space-y-6 mb-12">
           <p className="text-lg text-gray-700">
-            A PUGIL é uma marca brasileira especializada em equipamentos de alta qualidade para artes marciais. 
-            Nossa missão é fornecer aos atletas e entusiastas os melhores produtos, combinando tecnologia, 
+            A PUGIL é uma marca portuguesa especializada em equipamentos de alta qualidade para boxe. 
+            A nossa missão é fornecer aos atletas e entusiastas os melhores produtos, combinando tecnologia, 
             design e durabilidade.
           </p>
           
           <p className="text-lg text-gray-700">
-            Fundada por praticantes de artes marciais, entendemos as necessidades específicas dos atletas 
-            e nos dedicamos a criar produtos que atendam aos mais altos padrões de qualidade e desempenho.
+            Fundada por praticantes de boxe, entendemos as necessidades específicas dos atletas 
+            e estamos dedicados a criar produtos que atendam aos mais altos padrões de qualidade e desempenho.
           </p>
         </section>
 
         <section className="mb-12">
-          <h2 className="text-2xl font-bold mb-6">Nossa Missão</h2>
+          <h2 className="text-2xl font-bold mb-6">A nossa Missão</h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="p-6 bg-gray-50 rounded-lg">
               <h3 className="font-bold mb-3">Qualidade</h3>
@@ -39,22 +39,22 @@ const About = () => {
             <div className="p-6 bg-gray-50 rounded-lg">
               <h3 className="font-bold mb-3">Sustentabilidade</h3>
               <p className="text-gray-600">
-                Comprometidos com práticas sustentáveis em nossa produção e logística.
+                Comprometidos com práticas sustentáveis na nossa produção e logística.
               </p>
             </div>
           </div>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold mb-6">Contato</h2>
+          <h2 className="text-2xl font-bold mb-6">Contacto</h2>
           <div className="bg-gray-50 p-6 rounded-lg">
             <p className="text-gray-600 mb-4">
-              Entre em contato conosco para dúvidas, sugestões ou parcerias:
+              Entre em contacto connosco para dúvidas, sugestões ou parcerias:
             </p>
             <ul className="space-y-2 text-gray-700">
-              <li>Email: contato@pugil.com.br</li>
-              <li>Telefone: (11) 9999-9999</li>
-              <li>Horário: Segunda a Sexta, 9h às 18h</li>
+              <li>Email: 1rafaelscatola@programmer.net</li>
+              <li>Telefone: (+351) 932 969 505</li>
+              <li>Horário: Segunda à Sexta, 9h às 18h</li>
             </ul>
           </div>
         </section>

@@ -198,7 +198,7 @@ const ProductCustomizer = () => {
   return (
     <div ref={mountRef} className="w-full h-screen">
       <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm p-6 rounded-lg shadow-lg max-w-md">
-        <h2 className="text-2xl font-bold mb-6">Personalize seu Equipamento</h2>
+        <h2 className="text-2xl font-bold mb-6">Personaliza o teu Equipamento</h2>
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium mb-3">Produto</label>

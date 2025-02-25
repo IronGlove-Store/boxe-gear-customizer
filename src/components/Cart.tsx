@@ -18,7 +18,7 @@ export function Cart() {
     if (!isSignedIn) {
       toast({
         title: "Atenção",
-        description: "Você precisa estar logado para finalizar a compra.",
+        description: "Precisas de entrar com a tua conta para fazer a compra.",
         variant: "destructive",
       });
       return;
@@ -34,13 +34,13 @@ export function Cart() {
       // Formatar os itens para o Stripe
       const lineItems = items.map(item => ({
         price_data: {
-          currency: 'brl',
+          currency: 'eur',
           product_data: {
             name: item.name,
             description: `Tamanho: ${item.size}`,
             images: [item.image],
           },
-          unit_amount: Math.round(parseFloat(item.price.replace("R$", "")) * 100), // Converter para centavos
+          unit_amount: Math.round(parseFloat(item.price.replace("€", "")) * 100), // Converter para centavos
         },
         quantity: item.quantity,
       }));
@@ -92,7 +92,7 @@ export function Cart() {
         <div className="mt-8 flex flex-col h-full">
           {items.length === 0 ? (
             <div className="flex-1 flex items-center justify-center">
-              <p className="text-gray-500">Seu carrinho está vazio</p>
+              <p className="text-gray-500">O teu carrinho está vazio</p>
             </div>
           ) : (
             <>
