@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ShoppingCart } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Star } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useCart } from "@/contexts/CartContext";
 
@@ -17,6 +17,8 @@ interface Product {
   size: string;
   image: string;
   description?: string;
+  rating?: number;
+  reviews?: number;
 }
 
 // Dados mockados - em uma aplicação real, viriam de uma API
@@ -29,7 +31,9 @@ const products: Product[] = [
     color: "red",
     size: "12oz",
     image: "https://images.unsplash.com/photo-1583473848882-f9a5cb6c5ae7?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    description: "Professional-grade boxing gloves designed for superior protection and performance. Made with premium leather and advanced padding technology."
+    description: "Professional-grade boxing gloves designed for superior protection and performance. Made with premium leather and advanced padding technology.",
+    rating: 4.5,
+    reviews: 12
   },
   {
     id: 2,
@@ -39,7 +43,9 @@ const products: Product[] = [
     color: "red",
     size: "M",
     image: "https://images.unsplash.com/photo-1584464457692-54f6b2cd5ca3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    description: "High-quality headgear offering maximum protection during training and sparring sessions. Features adjustable straps for a perfect fit."
+    description: "High-quality headgear offering maximum protection during training and sparring sessions. Features adjustable straps for a perfect fit.",
+    rating: 4.0,
+    reviews: 8
   },
   {
     id: 3,
@@ -50,7 +56,9 @@ const products: Product[] = [
     color: "black",
     size: "One Size",
     image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    description: "Durable and comfortable hand wraps providing essential support and protection for your wrists and knuckles. Perfect for all combat sports."
+    description: "Durable and comfortable hand wraps providing essential support and protection for your wrists and knuckles. Perfect for all combat sports.",
+    rating: 4.8,
+    reviews: 25
   },
   {
     id: 4,
@@ -60,7 +68,9 @@ const products: Product[] = [
     color: "blue",
     size: "70lb",
     image: "https://images.unsplash.com/photo-1593787406536-3676a152d9cb?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    description: "Heavy-duty training bag designed to withstand intense workouts. Ideal for developing power, technique, and endurance."
+    description: "Heavy-duty training bag designed to withstand intense workouts. Ideal for developing power, technique, and endurance.",
+    rating: 4.2,
+    reviews: 15
   }
 ];
 
@@ -102,7 +112,7 @@ const ProductDetail = () => {
   const handleAddToCart = () => {
     if (!selectedSize) {
       toast({
-        title: "Please select a size",
+        title: "Por favor, selecione um tamanho",
         variant: "destructive",
       });
       return;
@@ -116,6 +126,19 @@ const ProductDetail = () => {
       quantity: 1,
       size: selectedSize,
     });
+  };
+
+  const renderStars = (rating: number) => {
+    return Array(5).fill(0).map((_, index) => (
+      <Star
+        key={index}
+        className={`w-5 h-5 ${
+          index < Math.floor(rating) 
+            ? "fill-yellow-400 text-yellow-400" 
+            : "text-gray-300"
+        }`}
+      />
+    ));
   };
 
   return (
@@ -147,6 +170,19 @@ const ProductDetail = () => {
               <h1 className="text-4xl font-bold mb-2">{product.name}</h1>
               <p className="text-gray-600">{product.category}</p>
             </div>
+
+            {product.rating && (
+              <div className="flex items-center gap-2">
+                <div className="flex">
+                  {renderStars(product.rating)}
+                </div>
+                {product.reviews && (
+                  <span className="text-gray-600">
+                    ({product.reviews} avaliações)
+                  </span>
+                )}
+              </div>
+            )}
 
             <div className="flex items-baseline gap-4">
               <span className="text-3xl font-bold">{product.price}</span>
@@ -189,7 +225,7 @@ const ProductDetail = () => {
               onClick={handleAddToCart}
             >
               <ShoppingCart className="mr-2 h-5 w-5" />
-              Add to Cart
+              Adicionar ao Carrinho
             </Button>
           </div>
         </div>
