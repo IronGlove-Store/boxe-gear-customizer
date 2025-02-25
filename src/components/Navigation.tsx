@@ -2,11 +2,14 @@
 import { useState, useEffect } from "react";
 import { Menu } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/clerk-react";
 import { Cart } from "./Cart";
+import { Button } from "./ui/button";
 
 const Navigation = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
+  const { isSignedIn } = useUser();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -45,7 +48,7 @@ const Navigation = () => {
                 Personalizar
               </Link>
               <Link
-                to="#"
+                to="/about"
                 className={`hover:text-gray-600 transition-colors font-medium ${isLight && !isScrolled ? 'text-white' : 'text-black'}`}
               >
                 Sobre
@@ -53,6 +56,22 @@ const Navigation = () => {
             </div>
           </div>
           <div className="flex items-center gap-6">
+            {isSignedIn ? (
+              <UserButton afterSignOutUrl="/" />
+            ) : (
+              <div className="hidden md:flex items-center gap-4">
+                <SignInButton mode="modal">
+                  <Button variant="ghost" className={isLight && !isScrolled ? 'text-white hover:bg-white/10' : ''}>
+                    Entrar
+                  </Button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <Button variant={isLight && !isScrolled ? 'outline' : 'default'} className={isLight && !isScrolled ? 'text-white border-white hover:bg-white hover:text-black' : ''}>
+                    Criar Conta
+                  </Button>
+                </SignUpButton>
+              </div>
+            )}
             <Cart />
             <button className={`md:hidden p-2.5 rounded-full transition-all duration-300 hover:scale-105 ${isLight && !isScrolled ? 'text-white hover:bg-white/10' : 'text-black hover:bg-gray-100'}`}>
               <Menu className="h-5 w-5" />
