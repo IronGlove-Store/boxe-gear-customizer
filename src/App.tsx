@@ -12,6 +12,7 @@ import Customize from "./pages/Customize";
 import About from "./pages/About";
 import Success from "./pages/Success";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/customize" element={<Customize />} />
             <Route path="/about" element={<About />} />
             <Route path="/success" element={<Success />} />
+            <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
