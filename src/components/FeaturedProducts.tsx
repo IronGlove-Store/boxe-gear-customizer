@@ -3,20 +3,20 @@ const products = [
   {
     id: 1,
     name: "Teste",
-    price: "$199.99",
-    image: "https://i.pinimg.com/736x/dc/80/d2/dc80d2e7e16b190879ba968e9a364705.jpg"
+    price: "199.99€",
+    image: "https://images.pexels.com/photos/6296058/pexels-photo-6296058.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
   },
   {
     id: 2,
     name: "Elite Headgear",
-    price: "$89.99",
-    image: "https://i.pinimg.com/736x/dc/80/d2/dc80d2e7e16b190879ba968e9a364705.jpg"
+    price: "89.99€",
+    image: "https://images.pexels.com/photos/6296058/pexels-photo-6296058.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
   },
   {
     id: 3,
     name: "Teste",
-    price: "$24.99",
-    image: "https://i.pinimg.com/736x/dc/80/d2/dc80d2e7e16b190879ba968e9a364705.jpg"
+    price: "24.99€",
+    image: "https://images.pexels.com/photos/6296058/pexels-photo-6296058.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
   }
 ];
 
