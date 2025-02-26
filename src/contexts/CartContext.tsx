@@ -92,11 +92,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const getCartTotal = () => {
     const total = items.reduce((sum, item) => {
-      const price = parseFloat(item.price.replace("R$", ""));
+      // Remove o símbolo € e espaços, depois converte para número
+      const price = parseFloat(item.price.replace("€", "").trim());
       return sum + (price * item.quantity);
     }, 0);
     
-    return `R$ ${total.toFixed(2)}`;
+    return `€ ${total.toFixed(2)}`;
   };
 
   return (
