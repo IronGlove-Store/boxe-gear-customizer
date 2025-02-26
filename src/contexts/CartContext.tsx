@@ -1,6 +1,7 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import { useUser } from "@clerk/clerk-react";
 
 interface CartItem {
   id: number;
@@ -22,24 +23,40 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// Chave para o localStorage
-const CART_STORAGE_KEY = 'boxegear-cart';
-
 export function CartProvider({ children }: { children: ReactNode }) {
-  // Inicializar o estado com os itens do localStorage
-  const [items, setItems] = useState<CartItem[]>(() => {
-    const savedCart = localStorage.getItem(CART_STORAGE_KEY);
-    return savedCart ? JSON.parse(savedCart) : [];
-  });
-  
+  const [items, setItems] = useState<CartItem[]>([]);
   const { toast } = useToast();
+  const { user } = useUser();
+  
+  // Carregar itens do localStorage com base no ID do usuário
+  useEffect(() => {
+    if (user) {
+      const savedCart = localStorage.getItem(`cart-${user.id}`);
+      if (savedCart) {
+        setItems(JSON.parse(savedCart));
+      }
+    } else {
+      setItems([]); // Limpar carrinho quando não há usuário
+    }
+  }, [user]);
 
   // Persistir o carrinho no localStorage sempre que houver mudanças
   useEffect(() => {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
-  }, [items]);
+    if (user) {
+      localStorage.setItem(`cart-${user.id}`, JSON.stringify(items));
+    }
+  }, [items, user]);
 
   const addItem = (product: CartItem) => {
+    if (!user) {
+      toast({
+        title: "Atenção",
+        description: "Precisas fazer login para adicionar itens ao carrinho.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setItems(currentItems => {
       const existingItem = currentItems.find(
         item => item.id === product.id && item.size === product.size
@@ -87,12 +104,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => {
     setItems([]);
-    localStorage.removeItem(CART_STORAGE_KEY);
+    if (user) {
+      localStorage.removeItem(`cart-${user.id}`);
+    }
   };
 
   const getCartTotal = () => {
     const total = items.reduce((sum, item) => {
-      // Remove o símbolo € e qualquer espaço, depois converte para número
       const price = parseFloat(item.price.replace(/[€\s]/g, ''));
       return sum + (price * item.quantity);
     }, 0);
