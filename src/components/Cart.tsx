@@ -31,32 +31,23 @@ export function Cart() {
       const stripeInstance = await stripe;
       if (!stripeInstance) throw new Error("Falha ao carregar Stripe");
 
-      // Formatar os itens para o Stripe
-      const lineItems = items.map(item => {
-        // Extrair apenas os números do preço
-        const priceString = item.price.replace(/[^0-9,.]/g, '').replace(',', '.');
-        const price = parseFloat(priceString);
-        
-        return {
-          price_data: {
-            currency: 'eur',
-            product_data: {
-              name: item.name,
-              description: `Tamanho: ${item.size}`,
-              images: [item.image],
-            },
-            unit_amount: Math.round(price * 100), // Converter para centavos
-          },
-          quantity: item.quantity,
-        };
-      });
+      // Em vez de usar price_data, vamos criar uma sessão de checkout na API
+      // Simulando uma chamada de API bem-sucedida com um ID de sessão
+      const sessionId = "cs_test_" + Math.random().toString(36).substring(2, 15);
+      
+      // No ambiente real, você faria uma chamada para sua API:
+      // const response = await fetch('/api/create-checkout-session', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({ items }),
+      // });
+      // const { sessionId } = await response.json();
 
-      // Redirecionar para o checkout do Stripe
+      // Redirecionando para checkout com sessionId (isso é uma simulação)
       const { error } = await stripeInstance.redirectToCheckout({
-        lineItems,
-        mode: 'payment',
-        successUrl: `${window.location.origin}/success`,
-        cancelUrl: `${window.location.origin}/catalog`,
+        sessionId: sessionId
       });
 
       if (error) {
