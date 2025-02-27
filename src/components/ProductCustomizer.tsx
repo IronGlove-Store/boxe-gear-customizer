@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useCart } from '@/contexts/CartContext';
@@ -60,7 +59,7 @@ const ProductCustomizer = () => {
     addItem({
       id: Date.now(),
       name: `${colorName} ${selectedMaterial.name} ${currentCategory.name}`,
-      price: `R$ ${price.toFixed(2)}`,
+      price: `€ ${price.toFixed(2)}`,
       image: currentCategory.image,
       quantity: 1,
       size: customization.size
@@ -258,7 +257,7 @@ const ProductCustomizer = () => {
                   <div>{material.name}</div>
                   {currentCategory && (
                     <div className="text-sm opacity-75">
-                      R$ {(currentCategory.basePrice * material.priceMultiplier).toFixed(2)}
+                      € {(currentCategory.basePrice * material.priceMultiplier).toFixed(2)}
                     </div>
                   )}
                 </button>

@@ -111,7 +111,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const getCartTotal = () => {
     const total = items.reduce((sum, item) => {
-      const price = parseFloat(item.price.replace(/[€\s]/g, ''));
+      // Extrair apenas os números do preço, independente do formato (R$ ou €)
+      const priceString = item.price.replace(/[^0-9,.]/g, '').replace(',', '.');
+      const price = parseFloat(priceString);
+      
+      if (isNaN(price)) {
+        console.error('Preço inválido:', item.price, 'para o item:', item.name);
+        return sum;
+      }
+      
       return sum + (price * item.quantity);
     }, 0);
     

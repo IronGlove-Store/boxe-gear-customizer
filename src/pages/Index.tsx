@@ -2,6 +2,7 @@
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import FeaturedProducts from "@/components/FeaturedProducts";
+import { EmailCapturePopup } from "@/components/EmailCapturePopup";
 
 const Index = () => {
   return (
@@ -9,6 +10,7 @@ const Index = () => {
       <Navigation />
       <Hero />
       <FeaturedProducts />
+      <EmailCapturePopup />
     </main>
   );
 };

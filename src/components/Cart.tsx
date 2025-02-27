@@ -32,31 +32,38 @@ export function Cart() {
       if (!stripeInstance) throw new Error("Falha ao carregar Stripe");
 
       // Formatar os itens para o Stripe
-      const lineItems = items.map(item => ({
-        price_data: {
-          currency: 'eur',
-          product_data: {
-            name: item.name,
-            description: `Tamanho: ${item.size}`,
-            images: [item.image],
+      const lineItems = items.map(item => {
+        // Extrair apenas os números do preço
+        const priceString = item.price.replace(/[^0-9,.]/g, '').replace(',', '.');
+        const price = parseFloat(priceString);
+        
+        return {
+          price_data: {
+            currency: 'eur',
+            product_data: {
+              name: item.name,
+              description: `Tamanho: ${item.size}`,
+              images: [item.image],
+            },
+            unit_amount: Math.round(price * 100), // Converter para centavos
           },
-          unit_amount: Math.round(parseFloat(item.price.replace("€", "")) * 100), // Converter para centavos
-        },
-        quantity: item.quantity,
-      }));
+          quantity: item.quantity,
+        };
+      });
 
       // Redirecionar para o checkout do Stripe
       const { error } = await stripeInstance.redirectToCheckout({
-        mode: 'payment',
         lineItems,
+        mode: 'payment',
         successUrl: `${window.location.origin}/success`,
         cancelUrl: `${window.location.origin}/catalog`,
       });
 
       if (error) {
+        console.error('Erro no checkout do Stripe:', error);
         toast({
           title: "Erro",
-          description: "Houve um erro ao processar o pagamento. Tente novamente.",
+          description: error.message || "Houve um erro ao processar o pagamento. Tente novamente.",
           variant: "destructive",
         });
       }
