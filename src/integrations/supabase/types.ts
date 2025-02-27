@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      addresses: {
+        Row: {
+          city: string
+          country: string
+          created_at: string
+          id: string
+          postal_code: string
+          street: string
+          user_id: string
+        }
+        Insert: {
+          city: string
+          country?: string
+          created_at?: string
+          id?: string
+          postal_code: string
+          street: string
+          user_id: string
+        }
+        Update: {
+          city?: string
+          country?: string
+          created_at?: string
+          id?: string
+          postal_code?: string
+          street?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -32,6 +62,99 @@ export type Database = {
           slug?: string
         }
         Relationships: []
+      }
+      order_items: {
+        Row: {
+          id: string
+          order_id: string
+          price: number
+          product_id: string
+          quantity: number
+          size: string | null
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          price: number
+          product_id: string
+          quantity: number
+          size?: string | null
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          price?: number
+          product_id?: string
+          quantity?: number
+          size?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_order"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_product"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          address_id: string
+          created_at: string
+          id: string
+          payment_method: string
+          shipping_method_id: string
+          status: string
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address_id: string
+          created_at?: string
+          id?: string
+          payment_method: string
+          shipping_method_id: string
+          status?: string
+          total_amount: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address_id?: string
+          created_at?: string
+          id?: string
+          payment_method?: string
+          shipping_method_id?: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_address"
+            columns: ["address_id"]
+            isOneToOne: false
+            referencedRelation: "addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_shipping_method"
+            columns: ["shipping_method_id"]
+            isOneToOne: false
+            referencedRelation: "shipping_methods"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
@@ -108,6 +231,30 @@ export type Database = {
           id?: string
           role?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      shipping_methods: {
+        Row: {
+          estimated_days: string
+          id: string
+          is_test: boolean | null
+          name: string
+          price: number
+        }
+        Insert: {
+          estimated_days: string
+          id?: string
+          is_test?: boolean | null
+          name: string
+          price: number
+        }
+        Update: {
+          estimated_days?: string
+          id?: string
+          is_test?: boolean | null
+          name?: string
+          price?: number
         }
         Relationships: []
       }

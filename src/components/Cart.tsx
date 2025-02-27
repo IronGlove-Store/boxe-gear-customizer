@@ -5,16 +5,17 @@ import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { stripe } from "@/lib/stripe";
 import { useUser } from "@clerk/clerk-react";
+import { useNavigate } from "react-router-dom";
 
 export function Cart() {
   const { items, removeItem, updateQuantity, getCartTotal } = useCart();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { toast } = useToast();
   const { isSignedIn } = useUser();
+  const navigate = useNavigate();
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (!isSignedIn) {
       toast({
         title: "Atenção",
@@ -24,55 +25,16 @@ export function Cart() {
       return;
     }
 
-    try {
-      setIsCheckingOut(true);
-      
-      const stripeInstance = await stripe;
-      if (!stripeInstance) throw new Error("Falha ao carregar Stripe");
-
-      // Para uma demonstração sem backend, vamos redirecionar para uma página de sucesso simulada
-      // Em vez de tentar usar o Stripe checkout que requer uma sessão válida
-      
+    if (items.length === 0) {
       toast({
-        title: "Checkout simulado",
-        description: "Em um ambiente real, isso redirecionaria para o Stripe Checkout.",
+        title: "Carrinho vazio",
+        description: "Adicione produtos ao carrinho antes de finalizar a compra.",
       });
-      
-      // Simulação do processo de pagamento
-      setTimeout(() => {
-        // Redirecionar para a página de sucesso
-        window.location.href = "/success";
-      }, 2000);
-      
-      // Nota: Em um ambiente real, você faria algo como:
-      /*
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ items }),
-      });
-      
-      const { sessionId } = await response.json();
-      
-      const { error } = await stripeInstance.redirectToCheckout({
-        sessionId: sessionId
-      });
-      
-      if (error) throw error;
-      */
-      
-    } catch (error) {
-      console.error('Erro no checkout:', error);
-      toast({
-        title: "Erro",
-        description: "Houve um erro ao processar o pagamento. Tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsCheckingOut(false);
+      return;
     }
+
+    // Navegar para a página de checkout
+    navigate("/checkout");
   };
 
   return (
