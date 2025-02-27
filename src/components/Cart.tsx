@@ -27,37 +27,42 @@ export function Cart() {
     try {
       setIsCheckingOut(true);
       
-      // Criar uma sessão de checkout
       const stripeInstance = await stripe;
       if (!stripeInstance) throw new Error("Falha ao carregar Stripe");
 
-      // Em vez de usar price_data, vamos criar uma sessão de checkout na API
-      // Simulando uma chamada de API bem-sucedida com um ID de sessão
-      const sessionId = "cs_test_" + Math.random().toString(36).substring(2, 15);
+      // Para uma demonstração sem backend, vamos redirecionar para uma página de sucesso simulada
+      // Em vez de tentar usar o Stripe checkout que requer uma sessão válida
       
-      // No ambiente real, você faria uma chamada para sua API:
-      // const response = await fetch('/api/create-checkout-session', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({ items }),
-      // });
-      // const { sessionId } = await response.json();
-
-      // Redirecionando para checkout com sessionId (isso é uma simulação)
+      toast({
+        title: "Checkout simulado",
+        description: "Em um ambiente real, isso redirecionaria para o Stripe Checkout.",
+      });
+      
+      // Simulação do processo de pagamento
+      setTimeout(() => {
+        // Redirecionar para a página de sucesso
+        window.location.href = "/success";
+      }, 2000);
+      
+      // Nota: Em um ambiente real, você faria algo como:
+      /*
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ items }),
+      });
+      
+      const { sessionId } = await response.json();
+      
       const { error } = await stripeInstance.redirectToCheckout({
         sessionId: sessionId
       });
-
-      if (error) {
-        console.error('Erro no checkout do Stripe:', error);
-        toast({
-          title: "Erro",
-          description: error.message || "Houve um erro ao processar o pagamento. Tente novamente.",
-          variant: "destructive",
-        });
-      }
+      
+      if (error) throw error;
+      */
+      
     } catch (error) {
       console.error('Erro no checkout:', error);
       toast({
