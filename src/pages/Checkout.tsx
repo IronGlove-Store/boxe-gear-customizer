@@ -244,7 +244,7 @@ const Checkout = () => {
   
   const handleCloseSuccess = () => {
     setShowSuccessDialog(false);
-    navigate("/");
+    navigate("/success");
   };
   
   return (
@@ -477,7 +477,7 @@ const Checkout = () => {
           
           <DialogFooter>
             <Button onClick={handleCloseSuccess} className="w-full">
-              Voltar para a Loja
+              Continuar
             </Button>
           </DialogFooter>
         </DialogContent>

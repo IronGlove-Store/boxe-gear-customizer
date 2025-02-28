@@ -16,6 +16,7 @@ interface OrderData {
   total_amount: number;
   created_at: string;
   payment_method: string;
+  shipping_method_id: string;
   shipping_methods: {
     name: string;
     estimated_days: string;
@@ -56,7 +57,7 @@ const Success = () => {
               created_at,
               payment_method,
               shipping_method_id,
-              shipping_methods:shipping_method_id (
+              shipping_methods:shipping_methods(
                 name,
                 estimated_days
               )
@@ -71,16 +72,24 @@ const Success = () => {
             console.log("Dados recebidos do Supabase:", data);
             
             // Converter o formato recebido do Supabase para o formato esperado pelo estado
+            const shippingMethod = {
+              name: "Não disponível",
+              estimated_days: "Não disponível"
+            };
+            
+            // Verificar se temos informações de envio disponíveis
+            if (data.shipping_methods) {
+              shippingMethod.name = data.shipping_methods.name;
+              shippingMethod.estimated_days = data.shipping_methods.estimated_days;
+            }
+            
             setLatestOrder({
               id: data.id,
               status: data.status,
               total_amount: data.total_amount,
               created_at: data.created_at,
               payment_method: data.payment_method,
-              shipping_method: {
-                name: data.shipping_methods?.name || "Não disponível",
-                estimated_days: data.shipping_methods?.estimated_days || "Não disponível"
-              }
+              shipping_method: shippingMethod
             });
           }
         } catch (error) {
