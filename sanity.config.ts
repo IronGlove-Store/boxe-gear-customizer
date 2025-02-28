@@ -8,7 +8,7 @@ export default defineConfig({
   name: 'default',
   title: 'Gym Equipment Store',
   
-  projectId: 'your-project-id', // Você precisará substituir com seu ID real do Sanity
+  projectId: 'tqd9ays1',
   dataset: 'production',
   
   plugins: [deskTool(), visionTool()],

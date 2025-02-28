@@ -2,7 +2,7 @@
 import { createClient } from '@sanity/client';
 
 export const sanityClient = createClient({
-  projectId: 'your-project-id', // Substitua com seu ID real do Sanity
+  projectId: 'tqd9ays1',
   dataset: 'production',
   useCdn: process.env.NODE_ENV === 'production',
   apiVersion: '2023-05-03', // Use a data atual ou a versão desejada da API
@@ -11,7 +11,7 @@ export const sanityClient = createClient({
 
 // Helper para gerar URLs de imagens do Sanity
 export const urlFor = (source: any) => {
-  return `https://cdn.sanity.io/images/your-project-id/production/${source}`;
+  return `https://cdn.sanity.io/images/tqd9ays1/production/${source}`;
 };
 
 // Função para buscar todos os documentos de um tipo específico

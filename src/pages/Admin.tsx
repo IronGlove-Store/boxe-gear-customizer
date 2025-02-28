@@ -34,7 +34,7 @@ const Admin = () => {
   const config = defineConfig({
     name: "default",
     title: "Gym Equipment Store Admin",
-    projectId: "your-project-id", // Substitua com seu ID real do Sanity
+    projectId: "tqd9ays1",
     dataset: "production",
     plugins: [deskTool()],
     schema: {
