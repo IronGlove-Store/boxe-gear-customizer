@@ -17,10 +17,7 @@ interface OrderData {
   created_at: string;
   payment_method: string;
   shipping_method_id: string;
-  shipping_methods: {
-    name: string;
-    estimated_days: string;
-  };
+  shipping_methods: any; // Usando any para lidar com diferentes formatos de resposta
 }
 
 // Interface para o estado que armazenamos
@@ -77,15 +74,23 @@ const Success = () => {
               estimated_days: "Não disponível"
             };
             
-            // Verificar se temos informações de envio disponíveis
-            if (data.shipping_methods && Array.isArray(data.shipping_methods) && data.shipping_methods.length > 0) {
-              // Se for um array, pegar o primeiro item
-              shippingMethod.name = data.shipping_methods[0].name;
-              shippingMethod.estimated_days = data.shipping_methods[0].estimated_days;
-            } else if (data.shipping_methods && typeof data.shipping_methods === 'object') {
-              // Se for um objeto único
-              shippingMethod.name = data.shipping_methods.name;
-              shippingMethod.estimated_days = data.shipping_methods.estimated_days;
+            // Verificar os tipos e estrutura dos dados retornados
+            console.log("Tipo de shipping_methods:", typeof data.shipping_methods);
+            console.log("É array?", Array.isArray(data.shipping_methods));
+            
+            // Extrair os dados de shipping_method com verificações seguras
+            if (data.shipping_methods) {
+              if (Array.isArray(data.shipping_methods) && data.shipping_methods.length > 0) {
+                const firstMethod = data.shipping_methods[0];
+                if (firstMethod && typeof firstMethod === 'object') {
+                  shippingMethod.name = firstMethod.name || "Não disponível";
+                  shippingMethod.estimated_days = firstMethod.estimated_days || "Não disponível";
+                }
+              } else if (typeof data.shipping_methods === 'object' && data.shipping_methods !== null) {
+                // Caso seja um objeto direto
+                shippingMethod.name = data.shipping_methods.name || "Não disponível";
+                shippingMethod.estimated_days = data.shipping_methods.estimated_days || "Não disponível";
+              }
             }
             
             setLatestOrder({
