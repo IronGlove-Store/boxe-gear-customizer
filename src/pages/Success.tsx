@@ -55,6 +55,7 @@ const Success = () => {
               total_amount,
               created_at,
               payment_method,
+              shipping_method_id,
               shipping_methods:shipping_method_id (
                 name,
                 estimated_days
@@ -67,6 +68,8 @@ const Success = () => {
 
           if (error) throw error;
           if (data) {
+            console.log("Dados recebidos do Supabase:", data);
+            
             // Converter o formato recebido do Supabase para o formato esperado pelo estado
             setLatestOrder({
               id: data.id,
@@ -75,8 +78,8 @@ const Success = () => {
               created_at: data.created_at,
               payment_method: data.payment_method,
               shipping_method: {
-                name: data.shipping_methods.name,
-                estimated_days: data.shipping_methods.estimated_days
+                name: data.shipping_methods?.name || "Não disponível",
+                estimated_days: data.shipping_methods?.estimated_days || "Não disponível"
               }
             });
           }
