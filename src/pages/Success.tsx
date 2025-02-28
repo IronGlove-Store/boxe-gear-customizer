@@ -6,30 +6,19 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useCart } from "@/contexts/CartContext";
 import Navigation from "@/components/Navigation";
 import { CheckCircle, Package, Truck, ArrowRight } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { useUser } from "@clerk/clerk-react";
-
-// Interface para representar o tipo de dados que recebemos do Supabase
-interface OrderData {
-  id: string;
-  status: string;
-  total_amount: number;
-  created_at: string;
-  payment_method: string;
-  shipping_method_id: string;
-  shipping_methods: any; // Usando any para lidar com diferentes formatos de resposta
-}
+import { fetchOrdersByUserId } from "@/lib/sanity";
 
 // Interface para o estado que armazenamos
 interface Order {
-  id: string;
+  _id: string;
   status: string;
-  total_amount: number;
-  created_at: string;
-  payment_method: string;
-  shipping_method: {
+  totalAmount: number;
+  createdAt: string;
+  paymentMethod: string;
+  shippingMethod: {
     name: string;
-    estimated_days: string;
+    estimatedDays: string;
   };
 }
 
@@ -45,61 +34,24 @@ const Success = () => {
     if (user) {
       async function fetchLatestOrder() {
         try {
-          const { data, error } = await supabase
-            .from('orders')
-            .select(`
-              id,
-              status,
-              total_amount,
-              created_at,
-              payment_method,
-              shipping_method_id,
-              shipping_methods:shipping_method_id (
-                name,
-                estimated_days
-              )
-            `)
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
-
-          if (error) throw error;
-          if (data) {
-            console.log("Dados recebidos do Supabase:", data);
+          const orders = await fetchOrdersByUserId(user.id);
+          
+          if (orders && orders.length > 0) {
+            console.log("Dados recebidos do Sanity:", orders[0]);
             
-            // Converter o formato recebido do Supabase para o formato esperado pelo estado
-            const shippingMethod = {
-              name: "Não disponível",
-              estimated_days: "Não disponível"
-            };
-            
-            // Verificar os tipos e estrutura dos dados retornados
-            console.log("Tipo de shipping_methods:", typeof data.shipping_methods);
-            console.log("É array?", Array.isArray(data.shipping_methods));
-            
-            // Extrair os dados de shipping_method com verificações seguras
-            if (data.shipping_methods) {
-              if (Array.isArray(data.shipping_methods) && data.shipping_methods.length > 0) {
-                const firstMethod = data.shipping_methods[0];
-                if (firstMethod && typeof firstMethod === 'object') {
-                  shippingMethod.name = firstMethod.name || "Não disponível";
-                  shippingMethod.estimated_days = firstMethod.estimated_days || "Não disponível";
-                }
-              } else if (typeof data.shipping_methods === 'object' && data.shipping_methods !== null) {
-                // Caso seja um objeto direto
-                shippingMethod.name = data.shipping_methods.name || "Não disponível";
-                shippingMethod.estimated_days = data.shipping_methods.estimated_days || "Não disponível";
-              }
-            }
+            // Pegar o pedido mais recente (já ordenado pela consulta)
+            const latestOrder = orders[0];
             
             setLatestOrder({
-              id: data.id,
-              status: data.status,
-              total_amount: data.total_amount,
-              created_at: data.created_at,
-              payment_method: data.payment_method,
-              shipping_method: shippingMethod
+              _id: latestOrder._id,
+              status: latestOrder.status,
+              totalAmount: latestOrder.totalAmount,
+              createdAt: latestOrder.createdAt,
+              paymentMethod: latestOrder.paymentMethod,
+              shippingMethod: {
+                name: latestOrder.shippingMethod.name,
+                estimatedDays: latestOrder.shippingMethod.estimatedDays
+              }
             });
           }
         } catch (error) {
@@ -136,7 +88,7 @@ const Success = () => {
           <CheckCircle className="w-16 h-16 mx-auto text-green-500" />
           <h1 className="text-4xl font-bold mt-4">Pedido Confirmado!</h1>
           <p className="text-lg text-gray-600 mt-2">
-            Obrigado por sua compra! {latestOrder && `O pedido #${latestOrder.id.substring(0, 8)} foi registrado com sucesso.`}
+            Obrigado por sua compra! {latestOrder && `O pedido #${latestOrder._id.substring(0, 8)} foi registrado com sucesso.`}
           </p>
         </div>
 
@@ -152,14 +104,14 @@ const Success = () => {
                 Detalhes do Pedido
               </CardTitle>
               <CardDescription>
-                Pedido realizado em {formatDate(latestOrder.created_at)}
+                Pedido realizado em {formatDate(latestOrder.createdAt)}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">Número do Pedido:</span>
-                  <span className="font-medium">#{latestOrder.id.substring(0, 8)}</span>
+                  <span className="font-medium">#{latestOrder._id.substring(0, 8)}</span>
                 </div>
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">Status:</span>
@@ -172,14 +124,14 @@ const Success = () => {
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">Método de Pagamento:</span>
                   <span className="font-medium">
-                    {latestOrder.payment_method === 'card' ? 'Cartão de Crédito/Débito' : 
-                    latestOrder.payment_method === 'test_card' ? 'Cartão de Teste' : 
-                    latestOrder.payment_method}
+                    {latestOrder.paymentMethod === 'card' ? 'Cartão de Crédito/Débito' : 
+                    latestOrder.paymentMethod === 'test_card' ? 'Cartão de Teste' : 
+                    latestOrder.paymentMethod}
                   </span>
                 </div>
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">Total:</span>
-                  <span className="font-medium">€ {latestOrder.total_amount.toFixed(2)}</span>
+                  <span className="font-medium">€ {latestOrder.totalAmount.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -188,8 +140,8 @@ const Success = () => {
                   <Truck className="h-5 w-5" />
                   Informações de Envio
                 </h3>
-                <p className="text-gray-600">{latestOrder.shipping_method.name}</p>
-                <p className="text-gray-600">{latestOrder.shipping_method.estimated_days}</p>
+                <p className="text-gray-600">{latestOrder.shippingMethod.name}</p>
+                <p className="text-gray-600">{latestOrder.shippingMethod.estimatedDays}</p>
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
