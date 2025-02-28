@@ -57,7 +57,7 @@ const Success = () => {
               created_at,
               payment_method,
               shipping_method_id,
-              shipping_methods:shipping_methods(
+              shipping_methods:shipping_method_id (
                 name,
                 estimated_days
               )
@@ -78,7 +78,12 @@ const Success = () => {
             };
             
             // Verificar se temos informações de envio disponíveis
-            if (data.shipping_methods) {
+            if (data.shipping_methods && Array.isArray(data.shipping_methods) && data.shipping_methods.length > 0) {
+              // Se for um array, pegar o primeiro item
+              shippingMethod.name = data.shipping_methods[0].name;
+              shippingMethod.estimated_days = data.shipping_methods[0].estimated_days;
+            } else if (data.shipping_methods && typeof data.shipping_methods === 'object') {
+              // Se for um objeto único
               shippingMethod.name = data.shipping_methods.name;
               shippingMethod.estimated_days = data.shipping_methods.estimated_days;
             }
