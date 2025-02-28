@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { useState } from "react";
 
@@ -14,7 +15,7 @@ const Hero = () => {
         {/* Mostra a imagem estática enquanto o vídeo carrega */}
         {!isVideoLoaded && (
           <img
-            src="https://via.placeholder.com/1920x1080" // Substitua isso por uma captura de tela do vídeo
+            src="https://via.placeholder.com/1920x1080"
             alt="Boxing Hero"
             className="absolute inset-0 w-full h-full object-cover"
           />
@@ -51,8 +52,9 @@ const Hero = () => {
               Ver Catálogo
             </Link>
             <Link
-            to="/customize"
-             className="px-8 py-4 bg-black/20 backdrop-blur-lg text-white font-medium rounded-lg hover:bg-black/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 text-lg animate-fade-in border border-white/20">
+              to="/customize"
+              className="px-8 py-4 bg-black/20 backdrop-blur-lg text-white font-medium rounded-lg hover:bg-black/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 text-lg animate-fade-in border border-white/20"
+            >
               Começa a Personalizar
             </Link>
           </div>
