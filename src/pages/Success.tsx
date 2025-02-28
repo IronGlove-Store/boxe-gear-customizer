@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
@@ -9,6 +9,20 @@ import { CheckCircle, Package, Truck, ArrowRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@clerk/clerk-react";
 
+// Interface para representar o tipo de dados que recebemos do Supabase
+interface OrderData {
+  id: string;
+  status: string;
+  total_amount: number;
+  created_at: string;
+  payment_method: string;
+  shipping_methods: {
+    name: string;
+    estimated_days: string;
+  };
+}
+
+// Interface para o estado que armazenamos
 interface Order {
   id: string;
   status: string;
@@ -18,12 +32,11 @@ interface Order {
   shipping_method: {
     name: string;
     estimated_days: string;
-  }
+  };
 }
 
 const Success = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { clearCart } = useCart();
   const { user } = useUser();
   const [latestOrder, setLatestOrder] = useState<Order | null>(null);
@@ -42,7 +55,7 @@ const Success = () => {
               total_amount,
               created_at,
               payment_method,
-              shipping_methods (
+              shipping_methods:shipping_method_id (
                 name,
                 estimated_days
               )
@@ -54,7 +67,18 @@ const Success = () => {
 
           if (error) throw error;
           if (data) {
-            setLatestOrder(data);
+            // Converter o formato recebido do Supabase para o formato esperado pelo estado
+            setLatestOrder({
+              id: data.id,
+              status: data.status,
+              total_amount: data.total_amount,
+              created_at: data.created_at,
+              payment_method: data.payment_method,
+              shipping_method: {
+                name: data.shipping_methods.name,
+                estimated_days: data.shipping_methods.estimated_days
+              }
+            });
           }
         } catch (error) {
           console.error('Erro ao buscar pedido:', error);
@@ -142,8 +166,8 @@ const Success = () => {
                   <Truck className="h-5 w-5" />
                   Informações de Envio
                 </h3>
-                <p className="text-gray-600">{latestOrder.shipping_method?.name}</p>
-                <p className="text-gray-600">{latestOrder.shipping_method?.estimated_days}</p>
+                <p className="text-gray-600">{latestOrder.shipping_method.name}</p>
+                <p className="text-gray-600">{latestOrder.shipping_method.estimated_days}</p>
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
