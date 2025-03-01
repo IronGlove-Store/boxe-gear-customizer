@@ -1,15 +1,16 @@
 
 import { useState, useEffect } from "react";
 import { Menu } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
-import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/clerk-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Cart } from "./Cart";
 import { Button } from "./ui/button";
+import { supabase } from "@/lib/supabase";
 
 const Navigation = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(false);
   const location = useLocation();
-  const { isSignedIn } = useUser();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -19,6 +20,27 @@ const Navigation = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    // Check initial auth state
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsSignedIn(!!session);
+    });
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setIsSignedIn(!!session);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
 
   const isLight = location.pathname === '/';
 
@@ -57,19 +79,25 @@ const Navigation = () => {
           </div>
           <div className="flex items-center gap-6">
             {isSignedIn ? (
-              <UserButton afterSignOutUrl="/" />
+              <Button 
+                variant="ghost" 
+                className={isLight && !isScrolled ? 'text-white hover:bg-white/10' : ''}
+                onClick={handleSignOut}
+              >
+                Sair
+              </Button>
             ) : (
               <div className="hidden md:flex items-center gap-4">
-                <SignInButton mode="modal">
+                <Link to="/auth">
                   <Button variant="ghost" className={isLight && !isScrolled ? 'text-white hover:bg-white/10' : ''}>
                     Entrar
                   </Button>
-                </SignInButton>
-                <SignUpButton mode="modal">
+                </Link>
+                <Link to="/auth?signup=true">
                   <Button variant={isLight && !isScrolled ? 'outline' : 'default'} className={isLight && !isScrolled ? 'text-white border-white hover:bg-white hover:text-black' : ''}>
                     Criar Conta
                   </Button>
-                </SignUpButton>
+                </Link>
               </div>
             )}
             <Cart />

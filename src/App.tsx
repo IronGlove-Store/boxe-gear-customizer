@@ -13,30 +13,24 @@ import Admin from "./pages/Admin";
 
 import { Toaster } from "@/components/ui/toaster";
 import { CartProvider } from "./contexts/CartContext";
-import { ClerkProvider } from "@clerk/clerk-react";
-
-// Clerk publishable key
-const clerkPubKey = "pk_test_Z3JlYXQtY3JvY29kaWxlLTIzLmNsZXJrLmFjY291bnRzLmRldiQ";
 
 function App() {
   return (
-    <ClerkProvider publishableKey={clerkPubKey}>
-      <CartProvider>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/catalog" element={<Catalog />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
-          <Route path="/customize" element={<Customize />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/success" element={<Success />} />
-          <Route path="/admin/*" element={<Admin />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Toaster />
-      </CartProvider>
-    </ClerkProvider>
+    <CartProvider>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/catalog" element={<Catalog />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/customize" element={<Customize />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/success" element={<Success />} />
+        <Route path="/admin/*" element={<Admin />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <Toaster />
+    </CartProvider>
   );
 }
 
