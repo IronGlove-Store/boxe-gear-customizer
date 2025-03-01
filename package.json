@@ -42,6 +42,7 @@
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.4",
     "@sanity/client": "^6.15.6",
+    "@sanity/image-url": "^1.0.2",
     "@sanity/vision": "^3.36.0",
     "@stripe/stripe-js": "^5.7.0",
     "@supabase/supabase-js": "^2.49.1",

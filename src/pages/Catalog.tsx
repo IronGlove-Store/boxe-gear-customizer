@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import ProductCard from "@/components/ProductCard";
 import Navigation from "@/components/Navigation";
 import { Input } from "@/components/ui/input";
@@ -7,117 +7,25 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Search, SlidersHorizontal, X } from "lucide-react";
+import { fetchProducts, fetchCategories } from "@/lib/sanity";
 
 interface Product {
-  id: number;
+  _id: string;
   name: string;
-  price: string;
-  originalPrice?: string;
-  image: string;
+  price: number;
+  originalPrice?: number;
+  imageUrl: string;
   category: string;
   color: string;
   size: string;
   rating?: number;
-  reviews?: number;
+  reviewsCount?: number;
 }
-
-const products: Product[] = [
-  {
-    id: 1,
-    name: "Luvas de Boxe Profissionais",
-    price: "€ 199.99",
-    category: "Gloves",
-    color: "red",
-    size: "12oz",
-    image: "https://images.pexels.com/photos/6296058/pexels-photo-6296058.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-    rating: 4.5,
-    reviews: 12
-  },
-  {
-    id: 2,
-    name: "Protetor Bucal Premium",
-    price: "€ 89.99",
-    category: "Protection",
-    color: "blue",
-    size: "M",
-    image: "https://images.pexels.com/photos/6296058/pexels-photo-6296058.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-    rating: 4.0,
-    reviews: 8
-  },
-  {
-    id: 3,
-    name: "Bandagem Elástica",
-    price: "€ 24.99",
-    originalPrice: "€ 29.99",
-    category: "Accessories",
-    color: "black",
-    size: "One Size",
-    image: "https://images.pexels.com/photos/6296058/pexels-photo-6296058.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-    rating: 4.8,
-    reviews: 25
-  },
-  {
-    id: 4,
-    name: "Saco de Pancada Profissional",
-    price: "€ 149.99",
-    category: "Equipment",
-    color: "black",
-    size: "70lb",
-    image: "https://images.pexels.com/photos/6296058/pexels-photo-6296058.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-    rating: 4.2,
-    reviews: 15
-  },
-  {
-    id: 5,
-    name: "Capacete de Proteção",
-    price: "€ 129.99",
-    category: "Protection",
-    color: "red",
-    size: "L",
-    image: "https://images.pexels.com/photos/6296058/pexels-photo-6296058.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-    rating: 4.6,
-    reviews: 19
-  },
-  {
-    id: 6,
-    name: "Protetor de Tórax",
-    price: "€ 79.99",
-    category: "Protection",
-    color: "black",
-    size: "XL",
-    image: "https://images.pexels.com/photos/6296058/pexels-photo-6296058.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-    rating: 4.1,
-    reviews: 11
-  },
-  {
-    id: 7,
-    name: "Corda de Pular Profissional",
-    price: "€ 29.99",
-    originalPrice: "€ 39.99",
-    category: "Accessories",
-    color: "black",
-    size: "One Size",
-    image: "https://images.pexels.com/photos/6296058/pexels-photo-6296058.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-    rating: 4.7,
-    reviews: 32
-  },
-  {
-    id: 8,
-    name: "Shorts de Muay Thai",
-    price: "€ 49.99",
-    category: "Clothing",
-    color: "blue",
-    size: "M",
-    image: "https://images.pexels.com/photos/6296058/pexels-photo-6296058.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-    rating: 4.3,
-    reviews: 21
-  }
-];
 
 const Catalog = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(products);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [filters, setFilters] = useState({
     categories: [] as string[],
     colors: [] as string[],
@@ -125,46 +33,51 @@ const Catalog = () => {
     onSale: false
   });
 
-  // Extract unique categories and colors for filter options
-  const categories = Array.from(new Set(products.map(product => product.category)));
-  const colors = Array.from(new Set(products.map(product => product.color)));
+  const { data: products = [], isLoading: isLoadingProducts } = useQuery({
+    queryKey: ['products'],
+    queryFn: fetchProducts,
+  });
 
-  // Apply filters and search
+  const { data: categoriesData = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: fetchCategories,
+  });
+
+  const categories = Array.from(new Set(products.map((product: Product) => product.category)));
+  const colors = Array.from(new Set(products.map((product: Product) => product.color)));
+
   useEffect(() => {
+    if (!products.length) return;
+    
     let result = [...products];
     
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(product => 
+      result = result.filter((product: Product) => 
         product.name.toLowerCase().includes(query) || 
         product.category.toLowerCase().includes(query)
       );
     }
     
-    // Category filter
     if (filters.categories.length > 0) {
-      result = result.filter(product => filters.categories.includes(product.category));
+      result = result.filter((product: Product) => filters.categories.includes(product.category));
     }
     
-    // Color filter
     if (filters.colors.length > 0) {
-      result = result.filter(product => filters.colors.includes(product.color));
+      result = result.filter((product: Product) => filters.colors.includes(product.color));
     }
     
-    // Price range filter
-    result = result.filter(product => {
-      const price = parseFloat(product.price.replace(/[^0-9,.]/g, '').replace(',', '.'));
+    result = result.filter((product: Product) => {
+      const price = product.price;
       return price >= filters.priceRange[0] && price <= filters.priceRange[1];
     });
     
-    // On sale filter
     if (filters.onSale) {
-      result = result.filter(product => product.originalPrice !== undefined);
+      result = result.filter((product: Product) => product.originalPrice !== undefined);
     }
     
     setFilteredProducts(result);
-  }, [searchQuery, filters]);
+  }, [searchQuery, filters, products]);
 
   const toggleCategory = (category: string) => {
     setFilters(prev => {
@@ -219,7 +132,6 @@ const Catalog = () => {
       <Navigation />
       <div className="container py-12 pt-24">
         <div className="flex flex-col lg:flex-row justify-between items-start gap-8">
-          {/* Sidebar with filters (hidden on mobile) */}
           <div className={`lg:w-1/4 lg:block ${showFilters ? 'block fixed inset-0 z-50 bg-white p-6 overflow-auto' : 'hidden'}`}>
             <div className="sticky top-24">
               <div className="flex items-center justify-between mb-6">
@@ -232,7 +144,6 @@ const Catalog = () => {
               </div>
               
               <div className="space-y-6">
-                {/* Categories filter */}
                 <div>
                   <h3 className="font-medium mb-3">Categorias</h3>
                   <div className="space-y-2">
@@ -254,7 +165,6 @@ const Catalog = () => {
                   </div>
                 </div>
                 
-                {/* Color filter */}
                 <div>
                   <h3 className="font-medium mb-3">Cores</h3>
                   <div className="flex flex-wrap gap-2">
@@ -274,7 +184,6 @@ const Catalog = () => {
                   </div>
                 </div>
                 
-                {/* Price range filter */}
                 <div>
                   <h3 className="font-medium mb-3">Preço</h3>
                   <div className="px-2">
@@ -293,7 +202,6 @@ const Catalog = () => {
                   </div>
                 </div>
                 
-                {/* On sale filter */}
                 <div>
                   <div className="flex items-center space-x-2">
                     <Checkbox 
@@ -321,7 +229,6 @@ const Catalog = () => {
             </div>
           </div>
           
-          {/* Main content */}
           <div className="lg:w-3/4 w-full">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
               <h1 className="text-3xl font-bold">Catálogo</h1>
@@ -349,7 +256,13 @@ const Catalog = () => {
               </div>
             </div>
             
-            {filteredProducts.length === 0 ? (
+            {isLoadingProducts ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="bg-gray-100 rounded-lg p-4 h-96 animate-pulse" />
+                ))}
+              </div>
+            ) : filteredProducts.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-lg text-gray-500">Nenhum produto encontrado.</p>
                 <Button onClick={resetFilters} className="mt-4">
@@ -359,7 +272,21 @@ const Catalog = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard 
+                    key={product._id} 
+                    product={{
+                      id: product._id,
+                      name: product.name,
+                      price: `€ ${product.price.toFixed(2)}`,
+                      originalPrice: product.originalPrice ? `€ ${product.originalPrice.toFixed(2)}` : undefined,
+                      image: product.imageUrl,
+                      category: product.category,
+                      color: product.color,
+                      size: product.size,
+                      rating: product.rating,
+                      reviews: product.reviewsCount
+                    }} 
+                  />
                 ))}
               </div>
             )}

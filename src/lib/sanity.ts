@@ -1,5 +1,6 @@
 
 import { createClient } from '@sanity/client';
+import imageUrlBuilder from '@sanity/image-url';
 
 export const sanityClient = createClient({
   projectId: 'tqd9ays1',
@@ -9,10 +10,18 @@ export const sanityClient = createClient({
   token: '', // Você precisará de um token para gravação de dados
 });
 
+// Configure o builder de URL de imagem
+const builder = imageUrlBuilder(sanityClient);
+
 // Helper para gerar URLs de imagens do Sanity
 export const urlFor = (source: any) => {
   if (!source) return '';
-  return `https://cdn.sanity.io/images/tqd9ays1/production/${source}`;
+  try {
+    return builder.image(source).url();
+  } catch (error) {
+    console.error('Erro ao gerar URL da imagem:', error);
+    return '';
+  }
 };
 
 // Função para buscar todos os documentos de um tipo específico
@@ -23,6 +32,33 @@ export async function fetchAllDocuments(type: string) {
     }`);
   } catch (error) {
     console.error(`Erro ao buscar documentos do tipo ${type}:`, error);
+    return [];
+  }
+}
+
+// Função para buscar produtos com referência à categoria
+export async function fetchProducts() {
+  try {
+    return await sanityClient.fetch(`
+      *[_type == "product"]{
+        _id,
+        name,
+        slug,
+        description,
+        price,
+        originalPrice,
+        imageUrl,
+        color,
+        size,
+        rating,
+        reviewsCount,
+        "category": category->name,
+        createdAt,
+        updatedAt
+      }
+    `);
+  } catch (error) {
+    console.error('Erro ao buscar produtos:', error);
     return [];
   }
 }
@@ -64,5 +100,23 @@ export async function updateDocument(id: string, document: any) {
   } catch (error) {
     console.error(`Erro ao atualizar documento ${id}:`, error);
     throw error;
+  }
+}
+
+// Função para buscar categorias
+export async function fetchCategories() {
+  try {
+    return await sanityClient.fetch(`
+      *[_type == "category"]{
+        _id,
+        name,
+        slug,
+        description,
+        createdAt
+      }
+    `);
+  } catch (error) {
+    console.error('Erro ao buscar categorias:', error);
+    return [];
   }
 }
