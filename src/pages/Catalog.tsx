@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Search, SlidersHorizontal, X } from "lucide-react";
-import { fetchProducts, fetchCategories } from "@/lib/sanity";
+import { fetchProducts, fetchCategories, SanityProduct } from "@/lib/sanity";
 
 interface Product {
   _id: string;
@@ -26,7 +26,7 @@ interface Product {
 interface Category {
   _id: string;
   name: string;
-  slug: string;
+  slug: { current: string };
   description?: string;
   createdAt: string;
 }
@@ -297,7 +297,7 @@ const Catalog = () => {
                   <ProductCard 
                     key={product._id} 
                     product={{
-                      id: product._id,
+                      id: product._id, // Pass _id as string instead of trying to convert to number
                       name: product.name,
                       price: `€ ${product.price.toFixed(2)}`,
                       originalPrice: product.originalPrice ? `€ ${product.originalPrice.toFixed(2)}` : undefined,
@@ -305,8 +305,8 @@ const Catalog = () => {
                       category: product.category,
                       color: product.color,
                       size: product.size,
-                      rating: product.rating || 0,  // Convert undefined to 0
-                      reviews: product.reviewsCount || 0   // Convert undefined to 0
+                      rating: product.rating || 0,
+                      reviews: product.reviewsCount || 0
                     }} 
                   />
                 ))}

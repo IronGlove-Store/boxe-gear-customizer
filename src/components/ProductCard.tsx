@@ -5,7 +5,7 @@ import { Star } from "lucide-react";
 
 interface ProductCardProps {
   product: {
-    id: number;
+    id: string; // Change from number to string
     name: string;
     price: string;
     originalPrice?: string;
