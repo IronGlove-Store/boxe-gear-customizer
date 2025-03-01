@@ -15,11 +15,12 @@ import Admin from "./pages/Admin";
 import { Toaster } from "@/components/ui/toaster";
 import { CartProvider } from "./contexts/CartContext";
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+// Use the provided publishable key
+const PUBLISHABLE_KEY = "pk_test_dW5iaWFzZWQtYWxwYWNhLTgwLmNsZXJrLmFjY291bnRzLmRldiQ";
 
 function App() {
   return (
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY || ""}>
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
       <CartProvider>
         <Routes>
           <Route path="/" element={<Index />} />
