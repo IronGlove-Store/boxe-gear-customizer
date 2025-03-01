@@ -24,8 +24,34 @@ export const urlFor = (source: any) => {
   }
 };
 
+// Define types for our Sanity documents
+export interface SanityProduct {
+  _id: string;
+  name: string;
+  slug: { current: string };
+  description?: string;
+  price: number;
+  originalPrice?: number;
+  imageUrl: string;
+  color?: string;
+  size?: string;
+  rating?: number;
+  reviewsCount?: number;
+  category?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SanityCategory {
+  _id: string;
+  name: string;
+  slug: { current: string };
+  description?: string;
+  createdAt?: string;
+}
+
 // Função para buscar todos os documentos de um tipo específico
-export async function fetchAllDocuments(type: string) {
+export async function fetchAllDocuments<T>(type: string): Promise<T[]> {
   try {
     return await sanityClient.fetch(`*[_type == "${type}"]{
       ...,
@@ -37,7 +63,7 @@ export async function fetchAllDocuments(type: string) {
 }
 
 // Função para buscar produtos com referência à categoria
-export async function fetchProducts() {
+export async function fetchProducts(): Promise<SanityProduct[]> {
   try {
     return await sanityClient.fetch(`
       *[_type == "product"]{
@@ -64,7 +90,7 @@ export async function fetchProducts() {
 }
 
 // Função para buscar um documento específico por ID
-export async function fetchDocumentById(type: string, id: string) {
+export async function fetchDocumentById<T>(type: string, id: string): Promise<T | null> {
   try {
     return await sanityClient.fetch(`*[_type == "${type}" && _id == "${id}"][0]`);
   } catch (error) {
@@ -74,7 +100,7 @@ export async function fetchDocumentById(type: string, id: string) {
 }
 
 // Função para buscar pedidos de um usuário específico
-export async function fetchOrdersByUserId(userId: string) {
+export async function fetchOrdersByUserId(userId: string): Promise<any[]> {
   try {
     return await sanityClient.fetch(`*[_type == "order" && userId == "${userId}"] | order(createdAt desc)`);
   } catch (error) {
@@ -104,7 +130,7 @@ export async function updateDocument(id: string, document: any) {
 }
 
 // Função para buscar categorias
-export async function fetchCategories() {
+export async function fetchCategories(): Promise<SanityCategory[]> {
   try {
     return await sanityClient.fetch(`
       *[_type == "category"]{

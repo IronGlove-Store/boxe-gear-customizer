@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import ProductCard from "@/components/ProductCard";
@@ -22,6 +23,14 @@ interface Product {
   reviewsCount?: number;
 }
 
+interface Category {
+  _id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  createdAt: string;
+}
+
 const Catalog = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -33,7 +42,7 @@ const Catalog = () => {
     onSale: false
   });
 
-  const { data: products = [], isLoading: isLoadingProducts } = useQuery({
+  const { data: productsData = [], isLoading: isLoadingProducts } = useQuery({
     queryKey: ['products'],
     queryFn: fetchProducts,
   });
@@ -43,8 +52,17 @@ const Catalog = () => {
     queryFn: fetchCategories,
   });
 
-  const categories = Array.from(new Set(products.map((product: Product) => product.category)));
-  const colors = Array.from(new Set(products.map((product: Product) => product.color)));
+  // Type cast the data to our interfaces
+  const products = productsData as Product[];
+  
+  // Extract unique categories and colors from the products
+  const categories = Array.from(
+    new Set(products.map((product: Product) => product.category))
+  ).filter(Boolean) as string[];
+  
+  const colors = Array.from(
+    new Set(products.map((product: Product) => product.color))
+  ).filter(Boolean) as string[];
 
   useEffect(() => {
     if (!products.length) return;
@@ -55,16 +73,20 @@ const Catalog = () => {
       const query = searchQuery.toLowerCase();
       result = result.filter((product: Product) => 
         product.name.toLowerCase().includes(query) || 
-        product.category.toLowerCase().includes(query)
+        (product.category && product.category.toLowerCase().includes(query))
       );
     }
     
     if (filters.categories.length > 0) {
-      result = result.filter((product: Product) => filters.categories.includes(product.category));
+      result = result.filter((product: Product) => 
+        product.category && filters.categories.includes(product.category)
+      );
     }
     
     if (filters.colors.length > 0) {
-      result = result.filter((product: Product) => filters.colors.includes(product.color));
+      result = result.filter((product: Product) => 
+        product.color && filters.colors.includes(product.color)
+      );
     }
     
     result = result.filter((product: Product) => {
@@ -147,7 +169,7 @@ const Catalog = () => {
                 <div>
                   <h3 className="font-medium mb-3">Categorias</h3>
                   <div className="space-y-2">
-                    {categories.map(category => (
+                    {categories.map((category) => (
                       <div key={category} className="flex items-center space-x-2">
                         <Checkbox 
                           id={`category-${category}`} 
@@ -168,7 +190,7 @@ const Catalog = () => {
                 <div>
                   <h3 className="font-medium mb-3">Cores</h3>
                   <div className="flex flex-wrap gap-2">
-                    {colors.map(color => (
+                    {colors.map((color) => (
                       <button
                         key={color}
                         className={`w-8 h-8 rounded-full transition-all duration-200 ${
@@ -176,7 +198,7 @@ const Catalog = () => {
                             ? 'ring-2 ring-offset-2 ring-black scale-110' 
                             : 'hover:scale-110'
                         }`}
-                        style={{ backgroundColor: color === 'red' ? '#ff0000' : color === 'blue' ? '#0000ff' : '#000000' }}
+                        style={{ backgroundColor: color }}
                         onClick={() => toggleColor(color)}
                         title={color}
                       />
@@ -283,8 +305,8 @@ const Catalog = () => {
                       category: product.category,
                       color: product.color,
                       size: product.size,
-                      rating: product.rating,
-                      reviews: product.reviewsCount
+                      rating: product.rating || 0,  // Convert undefined to 0
+                      reviews: product.reviewsCount || 0   // Convert undefined to 0
                     }} 
                   />
                 ))}
