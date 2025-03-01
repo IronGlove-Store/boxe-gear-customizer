@@ -4,13 +4,13 @@ import { Menu } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Cart } from "./Cart";
 import { Button } from "./ui/button";
-import { supabase } from "@/lib/supabase";
+import { useUser, SignOutButton } from "@clerk/clerk-react";
 
 const Navigation = () => {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isSignedIn, setIsSignedIn] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { isSignedIn, user } = useUser();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,27 +20,6 @@ const Navigation = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  useEffect(() => {
-    // Check initial auth state
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsSignedIn(!!session);
-    });
-
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setIsSignedIn(!!session);
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
-  };
 
   const isLight = location.pathname === '/';
 
@@ -79,13 +58,14 @@ const Navigation = () => {
           </div>
           <div className="flex items-center gap-6">
             {isSignedIn ? (
-              <Button 
-                variant="ghost" 
-                className={isLight && !isScrolled ? 'text-white hover:bg-white/10' : ''}
-                onClick={handleSignOut}
-              >
-                Sair
-              </Button>
+              <SignOutButton>
+                <Button 
+                  variant="ghost" 
+                  className={isLight && !isScrolled ? 'text-white hover:bg-white/10' : ''}
+                >
+                  Sair
+                </Button>
+              </SignOutButton>
             ) : (
               <div className="hidden md:flex items-center gap-4">
                 <Link to="/auth">
