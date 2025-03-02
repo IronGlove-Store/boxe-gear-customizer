@@ -41,13 +41,13 @@ const Auth = () => {
         <div className="mt-8 space-y-6">
           <div className="flex justify-center">
             {isSignUp ? (
-              <SignUpButton mode="modal" redirectUrl={window.location.origin}>
+              <SignUpButton mode="modal">
                 <Button size="lg" className="w-full">
                   Criar Conta
                 </Button>
               </SignUpButton>
             ) : (
-              <SignInButton mode="modal" redirectUrl={window.location.origin}>
+              <SignInButton mode="modal">
                 <Button size="lg" className="w-full">
                   Entrar
                 </Button>
