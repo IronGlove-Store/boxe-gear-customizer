@@ -31,7 +31,7 @@ function App() {
           <Route path="/auth" element={<Auth />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/success" element={<Success />} />
-          <Route path="/admin/*" element={<Admin />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Toaster />

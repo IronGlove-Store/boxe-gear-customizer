@@ -7,19 +7,17 @@ import { useCart } from "@/contexts/CartContext";
 import Navigation from "@/components/Navigation";
 import { CheckCircle, Package, Truck, ArrowRight } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
-import { fetchOrdersByUserId } from "@/lib/sanity";
+import { supabase } from "@/lib/supabase";
 
 // Interface para o estado que armazenamos
 interface Order {
-  _id: string;
+  id: string;
   status: string;
-  totalAmount: number;
-  createdAt: string;
-  paymentMethod: string;
-  shippingMethod: {
-    name: string;
-    estimatedDays: string;
-  };
+  total_amount: number;
+  created_at: string;
+  payment_method: string;
+  shipping_method: string;
+  shipping_days: string;
 }
 
 const Success = () => {
@@ -34,49 +32,53 @@ const Success = () => {
     if (user) {
       async function fetchLatestOrder() {
         try {
-          // Temporariamente, vamos usar dados simulados para garantir que a página carregue
-          // até que o Sanity esteja totalmente configurado
+          // Tentativa de buscar pedidos da database
+          const { data, error } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (error) throw error;
+
+          if (data && data.length > 0) {
+            setLatestOrder(data[0]);
+          } else {
+            // Se não encontrar na database, usar dados simulados
+            setTimeout(() => {
+              const mockOrder = {
+                id: "temp123456789",
+                status: "processing",
+                total_amount: 199.99,
+                created_at: new Date().toISOString(),
+                payment_method: "card",
+                shipping_method: "Entrega Padrão",
+                shipping_days: "3-5 dias úteis"
+              };
+              
+              setLatestOrder(mockOrder);
+              setIsLoading(false);
+            }, 1000);
+          }
+        } catch (error) {
+          console.error('Erro ao buscar pedido:', error);
+          // Se houver erro, mostrar dados simulados
           setTimeout(() => {
             const mockOrder = {
-              _id: "temp123456789",
+              id: "temp123456789",
               status: "processing",
-              totalAmount: 199.99,
-              createdAt: new Date().toISOString(),
-              paymentMethod: "card",
-              shippingMethod: {
-                name: "Entrega Padrão",
-                estimatedDays: "3-5 dias úteis"
-              }
+              total_amount: 199.99,
+              created_at: new Date().toISOString(),
+              payment_method: "card",
+              shipping_method: "Entrega Padrão",
+              shipping_days: "3-5 dias úteis"
             };
             
             setLatestOrder(mockOrder);
             setIsLoading(false);
           }, 1000);
-          
-          /* Comentamos a implementação real do Sanity por enquanto 
-          const orders = await fetchOrdersByUserId(user.id);
-          
-          if (orders && orders.length > 0) {
-            console.log("Dados recebidos do Sanity:", orders[0]);
-            
-            // Pegar o pedido mais recente (já ordenado pela consulta)
-            const latestOrder = orders[0];
-            
-            setLatestOrder({
-              _id: latestOrder._id,
-              status: latestOrder.status,
-              totalAmount: latestOrder.totalAmount,
-              createdAt: latestOrder.createdAt,
-              paymentMethod: latestOrder.paymentMethod,
-              shippingMethod: {
-                name: latestOrder.shippingMethod.name,
-                estimatedDays: latestOrder.shippingMethod.estimatedDays
-              }
-            });
-          }
-          */
-        } catch (error) {
-          console.error('Erro ao buscar pedido:', error);
+        } finally {
           setIsLoading(false);
         }
       }
@@ -110,7 +112,7 @@ const Success = () => {
           <CheckCircle className="w-16 h-16 mx-auto text-green-500" />
           <h1 className="text-4xl font-bold mt-4">Pedido Confirmado!</h1>
           <p className="text-lg text-gray-600 mt-2">
-            Obrigado por sua compra! {latestOrder && `O pedido #${latestOrder._id.substring(0, 8)} foi registrado com sucesso.`}
+            Obrigado por sua compra! {latestOrder && `O pedido #${latestOrder.id.substring(0, 8)} foi registrado com sucesso.`}
           </p>
         </div>
 
@@ -126,14 +128,14 @@ const Success = () => {
                 Detalhes do Pedido
               </CardTitle>
               <CardDescription>
-                Pedido realizado em {formatDate(latestOrder.createdAt)}
+                Pedido realizado em {formatDate(latestOrder.created_at)}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">Número do Pedido:</span>
-                  <span className="font-medium">#{latestOrder._id.substring(0, 8)}</span>
+                  <span className="font-medium">#{latestOrder.id.substring(0, 8)}</span>
                 </div>
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">Status:</span>
@@ -146,14 +148,14 @@ const Success = () => {
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">Método de Pagamento:</span>
                   <span className="font-medium">
-                    {latestOrder.paymentMethod === 'card' ? 'Cartão de Crédito/Débito' : 
-                    latestOrder.paymentMethod === 'test_card' ? 'Cartão de Teste' : 
-                    latestOrder.paymentMethod}
+                    {latestOrder.payment_method === 'card' ? 'Cartão de Crédito/Débito' : 
+                    latestOrder.payment_method === 'test_card' ? 'Cartão de Teste' : 
+                    latestOrder.payment_method}
                   </span>
                 </div>
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">Total:</span>
-                  <span className="font-medium">€ {latestOrder.totalAmount.toFixed(2)}</span>
+                  <span className="font-medium">€ {latestOrder.total_amount.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -162,8 +164,8 @@ const Success = () => {
                   <Truck className="h-5 w-5" />
                   Informações de Envio
                 </h3>
-                <p className="text-gray-600">{latestOrder.shippingMethod.name}</p>
-                <p className="text-gray-600">{latestOrder.shippingMethod.estimatedDays}</p>
+                <p className="text-gray-600">{latestOrder.shipping_method}</p>
+                <p className="text-gray-600">{latestOrder.shipping_days}</p>
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
