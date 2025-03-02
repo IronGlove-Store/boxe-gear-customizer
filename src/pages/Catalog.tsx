@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import ProductCard from "@/components/ProductCard";
 import Navigation from "@/components/Navigation";
 import { Input } from "@/components/ui/input";
@@ -8,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Search, SlidersHorizontal, X } from "lucide-react";
-import { fetchProducts, fetchCategories, SanityProduct } from "@/lib/sanity";
+import customizableProducts from "@/data/customizableProducts.json";
 
 interface Product {
-  _id: string;
+  id: string;
   name: string;
   price: number;
   originalPrice?: number;
@@ -23,18 +22,12 @@ interface Product {
   reviewsCount?: number;
 }
 
-interface Category {
-  _id: string;
-  name: string;
-  slug: { current: string };
-  description?: string;
-  createdAt: string;
-}
-
 const Catalog = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [products, setProducts] = useState<Product[]>([]);
   const [filters, setFilters] = useState({
     categories: [] as string[],
     colors: [] as string[],
@@ -42,19 +35,63 @@ const Catalog = () => {
     onSale: false
   });
 
-  const { data: productsData = [], isLoading: isLoadingProducts } = useQuery({
-    queryKey: ['products'],
-    queryFn: fetchProducts,
-  });
+  // Fetch products from localStorage
+  useEffect(() => {
+    setIsLoadingProducts(true);
+    try {
+      const storedProducts = localStorage.getItem('products');
+      
+      // Create sample products if none exist
+      if (!storedProducts) {
+        // Generate sample products based on customizable products categories
+        const sampleProducts = generateSampleProducts();
+        localStorage.setItem('products', JSON.stringify(sampleProducts));
+        setProducts(sampleProducts);
+      } else {
+        setProducts(JSON.parse(storedProducts));
+      }
+    } catch (error) {
+      console.error("Error loading products:", error);
+      // Generate sample products as fallback
+      const sampleProducts = generateSampleProducts();
+      setProducts(sampleProducts);
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  }, []);
 
-  const { data: categoriesData = [] } = useQuery({
-    queryKey: ['categories'],
-    queryFn: fetchCategories,
-  });
+  // Generate sample products from the customizable products data
+  const generateSampleProducts = (): Product[] => {
+    const sampleProducts: Product[] = [];
+    
+    customizableProducts.categories.forEach((category, categoryIndex) => {
+      // Create multiple products for each category
+      const colors = customizableProducts.colors;
+      
+      for (let i = 0; i < 3; i++) {
+        const colorIndex = (i % colors.length);
+        const color = colors[colorIndex];
+        const size = category.sizes[i % category.sizes.length];
+        
+        // Create a product
+        sampleProducts.push({
+          id: `${category.id}-${i}`,
+          name: `${category.name} ${i + 1}`,
+          price: category.basePrice + (i * 10),
+          originalPrice: i === 1 ? category.basePrice + (i * 15) : undefined,
+          imageUrl: category.image,
+          category: category.name,
+          color: color.name,
+          size: size,
+          rating: 3.5 + (i % 2),
+          reviewsCount: 10 + (i * 5)
+        });
+      }
+    });
+    
+    return sampleProducts;
+  };
 
-  // Type cast the data to our interfaces
-  const products = productsData as Product[];
-  
   // Extract unique categories and colors from the products
   const categories = Array.from(
     new Set(products.map((product: Product) => product.category))
@@ -190,19 +227,25 @@ const Catalog = () => {
                 <div>
                   <h3 className="font-medium mb-3">Cores</h3>
                   <div className="flex flex-wrap gap-2">
-                    {colors.map((color) => (
-                      <button
-                        key={color}
-                        className={`w-8 h-8 rounded-full transition-all duration-200 ${
-                          filters.colors.includes(color) 
-                            ? 'ring-2 ring-offset-2 ring-black scale-110' 
-                            : 'hover:scale-110'
-                        }`}
-                        style={{ backgroundColor: color }}
-                        onClick={() => toggleColor(color)}
-                        title={color}
-                      />
-                    ))}
+                    {colors.map((color) => {
+                      // Find the color value from customizableProducts
+                      const colorObj = customizableProducts.colors.find(c => c.name === color);
+                      const colorValue = colorObj ? colorObj.value : "#777777";
+                      
+                      return (
+                        <button
+                          key={color}
+                          className={`w-8 h-8 rounded-full transition-all duration-200 ${
+                            filters.colors.includes(color) 
+                              ? 'ring-2 ring-offset-2 ring-black scale-110' 
+                              : 'hover:scale-110'
+                          }`}
+                          style={{ backgroundColor: colorValue }}
+                          onClick={() => toggleColor(color)}
+                          title={color}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
                 
@@ -295,9 +338,9 @@ const Catalog = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProducts.map((product) => (
                   <ProductCard 
-                    key={product._id} 
+                    key={product.id} 
                     product={{
-                      id: product._id, // Pass _id as string instead of trying to convert to number
+                      id: product.id,
                       name: product.name,
                       price: `€ ${product.price.toFixed(2)}`,
                       originalPrice: product.originalPrice ? `€ ${product.originalPrice.toFixed(2)}` : undefined,
