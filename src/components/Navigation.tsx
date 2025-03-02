@@ -4,7 +4,7 @@ import { Menu } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Cart } from "./Cart";
 import { Button } from "./ui/button";
-import { useUser, SignOutButton } from "@clerk/clerk-react";
+import { useUser, SignInButton, SignUpButton, UserButton } from "@clerk/clerk-react";
 
 const Navigation = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -58,26 +58,29 @@ const Navigation = () => {
           </div>
           <div className="flex items-center gap-6">
             {isSignedIn ? (
-              <SignOutButton>
-                <Button 
-                  variant="ghost" 
-                  className={isLight && !isScrolled ? 'text-white hover:bg-white/10' : ''}
-                >
-                  Sair
-                </Button>
-              </SignOutButton>
+              <UserButton 
+                afterSignOutUrl="/"
+                appearance={{
+                  elements: {
+                    userButtonAvatarBox: 
+                      isLight && !isScrolled 
+                        ? "border-2 border-white" 
+                        : "border-2 border-gray-200"
+                  }
+                }}
+              />
             ) : (
               <div className="hidden md:flex items-center gap-4">
-                <Link to="/auth">
+                <SignInButton mode="modal">
                   <Button variant="ghost" className={isLight && !isScrolled ? 'text-white hover:bg-white/10' : ''}>
                     Entrar
                   </Button>
-                </Link>
-                <Link to="/auth?signup=true">
+                </SignInButton>
+                <SignUpButton mode="modal">
                   <Button variant={isLight && !isScrolled ? 'outline' : 'default'} className={isLight && !isScrolled ? 'text-white border-white hover:bg-white hover:text-black' : ''}>
                     Criar Conta
                   </Button>
-                </Link>
+                </SignUpButton>
               </div>
             )}
             <Cart />
