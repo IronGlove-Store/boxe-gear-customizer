@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
@@ -22,7 +21,6 @@ import {
   Trash
 } from "lucide-react";
 
-// Interfaces para os dados
 interface Product {
   id: string;
   name: string;
@@ -44,7 +42,6 @@ interface Order {
   user_id?: string;
 }
 
-// Mock data inicial
 const initialProducts: Product[] = [
   {
     id: "prod_1",
@@ -79,15 +76,15 @@ const initialOrders: Order[] = [
 ];
 
 const Admin = () => {
-  const { user, isSignedIn } = useUser();
+  const { user, isSignedIn, isLoaded } = useUser();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("products");
-  const [products, setProducts] = useState<Product[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   
-  // Form state para adicionar/editar produto
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [productForm, setProductForm] = useState({
     name: "",
@@ -97,48 +94,55 @@ const Admin = () => {
     image_url: "/placeholder.svg"
   });
   
-  // Verificar se o usuário está autenticado e tem permissão de admin
   useEffect(() => {
+    if (!isLoaded) return;
+
     if (!isSignedIn) {
+      toast({
+        title: "Acesso negado",
+        description: "Você precisa estar autenticado para acessar o painel de administração.",
+        variant: "destructive",
+      });
       navigate("/auth");
       return;
     }
 
-    // Verificar se o nome do usuário é "admin"
-    if (user?.fullName !== "admin" && user?.username !== "admin") {
+    const hasAdminName = user?.fullName?.toLowerCase() === "admin";
+    const hasAdminUsername = user?.username?.toLowerCase() === "admin";
+    const userEmail = user?.primaryEmailAddress?.emailAddress || "";
+    const hasAdminEmail = userEmail.startsWith("admin") || userEmail.includes("admin");
+    
+    const userIsAdmin = hasAdminName || hasAdminUsername || hasAdminEmail;
+    setIsAdmin(userIsAdmin);
+
+    if (!userIsAdmin) {
       toast({
         title: "Acesso negado",
-        description: "Você não tem permissão para acessar o painel de administração.",
+        description: "Você não tem permissão para acessar o painel de administração. O acesso é restrito a usuários com nome ou username 'admin'.",
         variant: "destructive",
       });
       navigate("/");
       return;
     }
 
-    // Carregar dados do localStorage ou usar dados iniciais
     loadData();
-  }, [isSignedIn, navigate, user, toast]);
+  }, [isSignedIn, isLoaded, navigate, user, toast]);
 
-  // Carregar dados do localStorage
   const loadData = () => {
     setIsLoading(true);
     try {
-      // Carregar produtos
       const storedProducts = localStorage.getItem('admin_products');
       if (storedProducts) {
         setProducts(JSON.parse(storedProducts));
       } else {
-        // Se não existir, usar dados iniciais e salvar
         setProducts(initialProducts);
         localStorage.setItem('admin_products', JSON.stringify(initialProducts));
       }
       
-      // Carregar pedidos
       const storedOrders = localStorage.getItem('admin_orders');
       if (storedOrders) {
         setOrders(JSON.parse(storedOrders));
       } else {
-        // Se não existir, usar dados iniciais e salvar
         setOrders(initialOrders);
         localStorage.setItem('admin_orders', JSON.stringify(initialOrders));
       }
@@ -150,7 +154,6 @@ const Admin = () => {
         variant: "destructive",
       });
       
-      // Em caso de erro, usar dados iniciais
       setProducts(initialProducts);
       setOrders(initialOrders);
     } finally {
@@ -158,19 +161,16 @@ const Admin = () => {
     }
   };
   
-  // Salvar produtos no localStorage
   const saveProducts = (updatedProducts: Product[]) => {
     localStorage.setItem('admin_products', JSON.stringify(updatedProducts));
     setProducts(updatedProducts);
   };
   
-  // Salvar pedidos no localStorage
   const saveOrders = (updatedOrders: Order[]) => {
     localStorage.setItem('admin_orders', JSON.stringify(updatedOrders));
     setOrders(updatedOrders);
   };
   
-  // Adicionar novo produto
   const handleAddProduct = () => {
     if (!productForm.name || !productForm.price) {
       toast({
@@ -190,7 +190,6 @@ const Admin = () => {
     const updatedProducts = [...products, newProduct];
     saveProducts(updatedProducts);
     
-    // Resetar formulário
     setProductForm({
       name: "",
       description: "",
@@ -205,7 +204,6 @@ const Admin = () => {
     });
   };
   
-  // Editar produto
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
     setProductForm({
@@ -217,7 +215,6 @@ const Admin = () => {
     });
   };
   
-  // Salvar edição de produto
   const handleSaveEdit = () => {
     if (!editingProduct) return;
     
@@ -229,7 +226,6 @@ const Admin = () => {
     
     saveProducts(updatedProducts);
     
-    // Resetar estado de edição
     setEditingProduct(null);
     setProductForm({
       name: "",
@@ -245,7 +241,6 @@ const Admin = () => {
     });
   };
   
-  // Excluir produto
   const handleDeleteProduct = (productId: string) => {
     const updatedProducts = products.filter(p => p.id !== productId);
     saveProducts(updatedProducts);
@@ -256,7 +251,6 @@ const Admin = () => {
     });
   };
   
-  // Atualizar status do pedido
   const handleUpdateOrderStatus = (orderId: string, newStatus: string) => {
     const updatedOrders = orders.map(order => 
       order.id === orderId 
@@ -272,13 +266,23 @@ const Admin = () => {
     });
   };
 
-  if (!isSignedIn) {
-    return <div className="p-8">Redirecionando para autenticação...</div>;
+  if (!isLoaded) {
+    return <div className="p-8 text-center">Carregando...</div>;
   }
 
-  // Verificar permissão de admin no render também para evitar flash de conteúdo
-  if (user?.fullName !== "admin" && user?.username !== "admin") {
-    return <div className="p-8">Sem permissão para acessar esta página.</div>;
+  if (!isSignedIn) {
+    return <div className="p-8 text-center">Redirecionando para autenticação...</div>;
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-8 flex flex-col items-center justify-center">
+        <h1 className="text-2xl font-bold mb-4">Acesso restrito</h1>
+        <p className="text-gray-600 mb-6">Seu usuário não tem permissão para acessar o painel de administração.</p>
+        <p className="text-gray-600 mb-6">O acesso é restrito a usuários com nome ou username 'admin'.</p>
+        <Button onClick={() => navigate("/")}>Voltar para a página inicial</Button>
+      </div>
+    );
   }
 
   return (
@@ -330,7 +334,6 @@ const Admin = () => {
               </Button>
             </div>
             
-            {/* Formulário para adicionar/editar produto */}
             <Card>
               <CardHeader>
                 <CardTitle>{editingProduct ? 'Editar Produto' : 'Novo Produto'}</CardTitle>
