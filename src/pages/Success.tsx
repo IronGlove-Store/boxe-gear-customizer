@@ -7,7 +7,6 @@ import { useCart } from "@/contexts/CartContext";
 import Navigation from "@/components/Navigation";
 import { CheckCircle, Package, Truck, ArrowRight } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
-import { supabase } from "@/lib/supabase";
 
 // Interface para o estado que armazenamos
 interface Order {
@@ -27,70 +26,54 @@ const Success = () => {
   const [latestOrder, setLatestOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Buscar o pedido mais recente do usuário
+  // Simular busca de pedido usando localStorage
   useEffect(() => {
-    if (user) {
-      async function fetchLatestOrder() {
-        try {
-          // Tentativa de buscar pedidos da database
-          const { data, error } = await supabase
-            .from('orders')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(1);
-
-          if (error) throw error;
-
-          if (data && data.length > 0) {
-            setLatestOrder(data[0]);
-          } else {
-            // Se não encontrar na database, usar dados simulados
-            setTimeout(() => {
-              const mockOrder = {
-                id: "temp123456789",
-                status: "processing",
-                total_amount: 199.99,
-                created_at: new Date().toISOString(),
-                payment_method: "card",
-                shipping_method: "Entrega Padrão",
-                shipping_days: "3-5 dias úteis"
-              };
-              
-              setLatestOrder(mockOrder);
-              setIsLoading(false);
-            }, 1000);
-          }
-        } catch (error) {
-          console.error('Erro ao buscar pedido:', error);
-          // Se houver erro, mostrar dados simulados
-          setTimeout(() => {
-            const mockOrder = {
-              id: "temp123456789",
-              status: "processing",
-              total_amount: 199.99,
-              created_at: new Date().toISOString(),
-              payment_method: "card",
-              shipping_method: "Entrega Padrão",
-              shipping_days: "3-5 dias úteis"
-            };
-            
-            setLatestOrder(mockOrder);
-            setIsLoading(false);
-          }, 1000);
-        } finally {
-          setIsLoading(false);
+    async function fetchLatestOrder() {
+      try {
+        // Tentar buscar o último pedido do localStorage
+        const storedOrder = localStorage.getItem('latestOrder');
+        
+        if (storedOrder) {
+          setLatestOrder(JSON.parse(storedOrder));
+        } else {
+          // Se não encontrar no localStorage, usar dados simulados
+          const mockOrder = {
+            id: "temp" + Math.random().toString(36).substring(2, 15),
+            status: "processing",
+            total_amount: 199.99,
+            created_at: new Date().toISOString(),
+            payment_method: "card",
+            shipping_method: "Entrega Padrão",
+            shipping_days: "3-5 dias úteis"
+          };
+          
+          // Guardar no localStorage para futuras visitas
+          localStorage.setItem('latestOrder', JSON.stringify(mockOrder));
+          setLatestOrder(mockOrder);
         }
+      } catch (error) {
+        console.error('Erro ao buscar pedido:', error);
+        // Se houver erro, mostrar dados simulados
+        const mockOrder = {
+          id: "temp" + Math.random().toString(36).substring(2, 15),
+          status: "processing",
+          total_amount: 199.99,
+          created_at: new Date().toISOString(),
+          payment_method: "card",
+          shipping_method: "Entrega Padrão",
+          shipping_days: "3-5 dias úteis"
+        };
+        
+        localStorage.setItem('latestOrder', JSON.stringify(mockOrder));
+        setLatestOrder(mockOrder);
+      } finally {
+        setIsLoading(false);
       }
-
-      fetchLatestOrder();
-    } else {
-      setIsLoading(false);
     }
-  }, [user]);
 
-  // Limpar o carrinho quando o componente for montado
-  useEffect(() => {
+    fetchLatestOrder();
+    
+    // Limpar o carrinho quando o componente for montado
     clearCart();
   }, [clearCart]);
 
