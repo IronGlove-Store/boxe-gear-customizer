@@ -16,6 +16,7 @@ interface Product {
   imageUrl: string;
   category: string;
   color: string;
+  colors?: string[];
   size: string;
   rating?: number;
   reviewsCount?: number;
@@ -28,6 +29,7 @@ interface AdminProduct {
   price: number;
   category: string;
   image_url: string;
+  colors?: string[];
   original_price?: number;
   created_at: string;
 }
@@ -55,18 +57,26 @@ const Catalog = () => {
       if (adminProducts) {
         const parsedAdminProducts = JSON.parse(adminProducts);
         // Convert admin products to catalog format
-        const formattedProducts = parsedAdminProducts.map((prod: AdminProduct) => ({
-          id: prod.id,
-          name: prod.name,
-          price: prod.price,
-          originalPrice: prod.original_price,
-          imageUrl: prod.image_url || "/placeholder.svg",
-          category: prod.category || "Sem categoria",
-          color: "Padrão",
-          size: "Único",
-          rating: 4.0,
-          reviewsCount: 0
-        }));
+        const formattedProducts = parsedAdminProducts.map((prod: AdminProduct) => {
+          // Pick the first color if available, otherwise default
+          const firstColor = prod.colors && prod.colors.length > 0 
+            ? prod.colors[0] 
+            : "Padrão";
+            
+          return {
+            id: prod.id,
+            name: prod.name,
+            price: prod.price,
+            originalPrice: prod.original_price,
+            imageUrl: prod.image_url || "/placeholder.svg",
+            category: prod.category || "Sem categoria",
+            color: firstColor,
+            colors: prod.colors || [],
+            size: "Único",
+            rating: 4.0,
+            reviewsCount: 0
+          };
+        });
         
         setProducts(formattedProducts);
       } else {
@@ -107,6 +117,7 @@ const Catalog = () => {
           imageUrl: category.image,
           category: category.name,
           color: color.name,
+          colors: [color.name],
           size: size,
           rating: 3.5 + (i % 2),
           reviewsCount: 10 + (i * 5)
@@ -122,8 +133,15 @@ const Catalog = () => {
     new Set(products.map((product: Product) => product.category))
   ).filter(Boolean) as string[];
   
+  // Get all available colors from all products
   const colors = Array.from(
-    new Set(products.map((product: Product) => product.color))
+    new Set(
+      products.flatMap((product: Product) => 
+        product.colors && product.colors.length > 0 
+          ? product.colors 
+          : [product.color]
+      )
+    )
   ).filter(Boolean) as string[];
 
   useEffect(() => {
@@ -146,9 +164,14 @@ const Catalog = () => {
     }
     
     if (filters.colors.length > 0) {
-      result = result.filter((product: Product) => 
-        product.color && filters.colors.includes(product.color)
-      );
+      result = result.filter((product: Product) => {
+        // Check if any of the product's colors match the filter
+        if (product.colors && product.colors.length > 0) {
+          return product.colors.some(color => filters.colors.includes(color));
+        }
+        // Fall back to the single color if no colors array
+        return product.color && filters.colors.includes(product.color);
+      });
     }
     
     result = result.filter((product: Product) => {

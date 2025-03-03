@@ -1,7 +1,7 @@
-
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { Star } from "lucide-react";
+import customizableProducts from "@/data/customizableProducts.json";
 
 interface ProductCardProps {
   product: {
@@ -12,6 +12,7 @@ interface ProductCardProps {
     image: string;
     category: string;
     color: string;
+    colors?: string[];
     size: string;
     rating?: number;
     reviews?: number;
@@ -34,6 +35,48 @@ const ProductCard = ({ product, className }: ProductCardProps) => {
         )}
       />
     ));
+  };
+  
+  const renderColorDots = () => {
+    if (!product.colors || product.colors.length <= 1) {
+      // If there's only one color or no colors array, show the main color
+      const colorObj = customizableProducts.colors.find(c => c.name === product.color);
+      const colorValue = colorObj ? colorObj.value : "#777777";
+      
+      return (
+        <span 
+          className="inline-block w-3 h-3 rounded-full border border-gray-300" 
+          style={{ backgroundColor: colorValue }}
+          title={product.color}
+        />
+      );
+    }
+    
+    // Otherwise show all available colors (limited to 4 with +X indicator)
+    const displayColors = product.colors.slice(0, 4);
+    const remainingCount = product.colors.length - 4;
+    
+    return (
+      <div className="flex items-center gap-1">
+        {displayColors.map(colorName => {
+          const colorObj = customizableProducts.colors.find(c => c.name === colorName);
+          const colorValue = colorObj ? colorObj.value : "#777777";
+          
+          return (
+            <span 
+              key={colorName}
+              className="inline-block w-3 h-3 rounded-full border border-gray-300" 
+              style={{ backgroundColor: colorValue }}
+              title={colorName}
+            />
+          );
+        })}
+        
+        {remainingCount > 0 && (
+          <span className="text-xs text-gray-500">+{remainingCount}</span>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -60,7 +103,10 @@ const ProductCard = ({ product, className }: ProductCardProps) => {
           )}
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-600">
-          <span>Cor: {product.color}</span>
+          <div className="flex items-center gap-1">
+            <span>Cores:</span> 
+            {renderColorDots()}
+          </div>
           <span>•</span>
           <span>Tamanho: {product.size}</span>
         </div>

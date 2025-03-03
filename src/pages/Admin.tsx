@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Package, 
   ShoppingBag, 
@@ -20,6 +21,7 @@ import {
   Edit,
   Trash
 } from "lucide-react";
+import customizableProducts from "@/data/customizableProducts.json";
 
 interface Product {
   id: string;
@@ -28,7 +30,9 @@ interface Product {
   price: number;
   category: string;
   image_url: string;
+  colors?: string[];
   created_at: string;
+  original_price?: number;
 }
 
 interface Order {
@@ -80,10 +84,11 @@ const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("products");
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [availableColors, setAvailableColors] = useState<{name: string, value: string}[]>([]);
   
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [productForm, setProductForm] = useState({
@@ -91,8 +96,14 @@ const Admin = () => {
     description: "",
     price: 0,
     category: "",
-    image_url: "/placeholder.svg"
+    image_url: "/placeholder.svg",
+    colors: [] as string[],
+    original_price: undefined as number | undefined
   });
+  
+  useEffect(() => {
+    setAvailableColors(customizableProducts.colors);
+  }, []);
   
   useEffect(() => {
     if (!isLoaded) return;
@@ -195,7 +206,9 @@ const Admin = () => {
       description: "",
       price: 0,
       category: "",
-      image_url: "/placeholder.svg"
+      image_url: "/placeholder.svg",
+      colors: [],
+      original_price: undefined
     });
     
     toast({
@@ -211,7 +224,9 @@ const Admin = () => {
       description: product.description || "",
       price: product.price,
       category: product.category || "",
-      image_url: product.image_url || "/placeholder.svg"
+      image_url: product.image_url || "/placeholder.svg",
+      colors: product.colors || [],
+      original_price: product.original_price
     });
   };
   
@@ -232,12 +247,26 @@ const Admin = () => {
       description: "",
       price: 0,
       category: "",
-      image_url: "/placeholder.svg"
+      image_url: "/placeholder.svg",
+      colors: [],
+      original_price: undefined
     });
     
     toast({
       title: "Sucesso",
       description: "Produto atualizado com sucesso! As alterações já estão disponíveis no catálogo.",
+    });
+  };
+  
+  const handleToggleColor = (colorName: string) => {
+    setProductForm(prev => {
+      const isSelected = prev.colors.includes(colorName);
+      return {
+        ...prev,
+        colors: isSelected
+          ? prev.colors.filter(c => c !== colorName)
+          : [...prev.colors, colorName]
+      };
     });
   };
   
@@ -325,7 +354,9 @@ const Admin = () => {
                     description: "",
                     price: 0,
                     category: "",
-                    image_url: "/placeholder.svg"
+                    image_url: "/placeholder.svg",
+                    colors: [],
+                    original_price: undefined
                   });
                 }}
               >
@@ -362,14 +393,29 @@ const Admin = () => {
                       onChange={(e) => setProductForm({...productForm, description: e.target.value})}
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Preço*</label>
-                    <input 
-                      type="number"
-                      className="w-full p-2 border rounded"
-                      value={productForm.price}
-                      onChange={(e) => setProductForm({...productForm, price: Number(e.target.value)})}
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Preço*</label>
+                      <input 
+                        type="number"
+                        className="w-full p-2 border rounded"
+                        value={productForm.price}
+                        onChange={(e) => setProductForm({...productForm, price: Number(e.target.value)})}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Preço Original (opcional)</label>
+                      <input 
+                        type="number"
+                        className="w-full p-2 border rounded"
+                        value={productForm.original_price || ''}
+                        onChange={(e) => setProductForm({
+                          ...productForm, 
+                          original_price: e.target.value ? Number(e.target.value) : undefined
+                        })}
+                        placeholder="Deixe em branco se não houver desconto"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Categoria</label>
@@ -389,6 +435,30 @@ const Admin = () => {
                       onChange={(e) => setProductForm({...productForm, image_url: e.target.value})}
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Cores disponíveis</label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-1">
+                      {availableColors.map((color) => (
+                        <div key={color.name} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`color-${color.name}`} 
+                            checked={productForm.colors.includes(color.name)}
+                            onCheckedChange={() => handleToggleColor(color.name)}
+                          />
+                          <label
+                            htmlFor={`color-${color.name}`}
+                            className="flex items-center gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            <span 
+                              className="inline-block w-4 h-4 rounded-full" 
+                              style={{ backgroundColor: color.value }}
+                            ></span>
+                            {color.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   <div className="mt-2">
                     <Button 
                       onClick={editingProduct ? handleSaveEdit : handleAddProduct}
@@ -406,7 +476,9 @@ const Admin = () => {
                             description: "",
                             price: 0,
                             category: "",
-                            image_url: "/placeholder.svg"
+                            image_url: "/placeholder.svg",
+                            colors: [],
+                            original_price: undefined
                           });
                         }}
                       >
@@ -438,6 +510,7 @@ const Admin = () => {
                           <th className="px-4 py-2 text-left">Nome</th>
                           <th className="px-4 py-2 text-left">Preço</th>
                           <th className="px-4 py-2 text-left">Categoria</th>
+                          <th className="px-4 py-2 text-left">Cores</th>
                           <th className="px-4 py-2 text-right">Ações</th>
                         </tr>
                       </thead>
@@ -447,6 +520,25 @@ const Admin = () => {
                             <td className="px-4 py-2">{product.name}</td>
                             <td className="px-4 py-2">€{product.price.toFixed(2)}</td>
                             <td className="px-4 py-2">{product.category}</td>
+                            <td className="px-4 py-2">
+                              <div className="flex gap-1">
+                                {product.colors && product.colors.length > 0 ? (
+                                  product.colors.map(colorName => {
+                                    const colorObj = availableColors.find(c => c.name === colorName);
+                                    return (
+                                      <div 
+                                        key={colorName}
+                                        className="w-4 h-4 rounded-full border border-gray-300"
+                                        style={{ backgroundColor: colorObj?.value || '#ccc' }}
+                                        title={colorName}
+                                      />
+                                    );
+                                  })
+                                ) : (
+                                  <span className="text-gray-400">Padrão</span>
+                                )}
+                              </div>
+                            </td>
                             <td className="px-4 py-2 text-right">
                               <Button 
                                 variant="ghost" 
