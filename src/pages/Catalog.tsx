@@ -21,6 +21,17 @@ interface Product {
   reviewsCount?: number;
 }
 
+interface AdminProduct {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  image_url: string;
+  original_price?: number;
+  created_at: string;
+}
+
 const Catalog = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -38,16 +49,31 @@ const Catalog = () => {
   useEffect(() => {
     setIsLoadingProducts(true);
     try {
-      const storedProducts = localStorage.getItem('products');
+      // First try to get products from admin panel
+      const adminProducts = localStorage.getItem('admin_products');
       
-      // Create sample products if none exist
-      if (!storedProducts) {
-        // Generate sample products based on customizable products categories
+      if (adminProducts) {
+        const parsedAdminProducts = JSON.parse(adminProducts);
+        // Convert admin products to catalog format
+        const formattedProducts = parsedAdminProducts.map((prod: AdminProduct) => ({
+          id: prod.id,
+          name: prod.name,
+          price: prod.price,
+          originalPrice: prod.original_price,
+          imageUrl: prod.image_url || "/placeholder.svg",
+          category: prod.category || "Sem categoria",
+          color: "Padrão",
+          size: "Único",
+          rating: 4.0,
+          reviewsCount: 0
+        }));
+        
+        setProducts(formattedProducts);
+      } else {
+        // Create sample products if none exist
         const sampleProducts = generateSampleProducts();
         localStorage.setItem('products', JSON.stringify(sampleProducts));
         setProducts(sampleProducts);
-      } else {
-        setProducts(JSON.parse(storedProducts));
       }
     } catch (error) {
       console.error("Error loading products:", error);

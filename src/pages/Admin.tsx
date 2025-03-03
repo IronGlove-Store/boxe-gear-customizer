@@ -200,7 +200,7 @@ const Admin = () => {
     
     toast({
       title: "Sucesso",
-      description: "Produto adicionado com sucesso!",
+      description: "Produto adicionado com sucesso! O produto já está disponível no catálogo.",
     });
   };
   
@@ -237,7 +237,7 @@ const Admin = () => {
     
     toast({
       title: "Sucesso",
-      description: "Produto atualizado com sucesso!",
+      description: "Produto atualizado com sucesso! As alterações já estão disponíveis no catálogo.",
     });
   };
   
@@ -247,7 +247,7 @@ const Admin = () => {
     
     toast({
       title: "Sucesso",
-      description: "Produto excluído com sucesso!",
+      description: "Produto excluído com sucesso! O produto foi removido do catálogo.",
     });
   };
   
