@@ -1,22 +1,22 @@
-
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { useUser } from "@clerk/clerk-react";
 
 interface CartItem {
-  id: number;
+  id: string;
   name: string;
   price: string;
   image: string;
   quantity: number;
   size: string;
+  color?: string;
 }
 
 interface CartContextType {
   items: CartItem[];
   addItem: (product: CartItem) => void;
-  removeItem: (id: number, size: string) => void;
-  updateQuantity: (id: number, size: string, quantity: number) => void;
+  removeItem: (id: string, size: string, color?: string) => void;
+  updateQuantity: (id: string, size: string, quantity: number, color?: string) => void;
   clearCart: () => void;
   getCartTotal: () => string;
 }
@@ -28,7 +28,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const { user } = useUser();
   
-  // Carregar itens do localStorage com base no ID do usuário
   useEffect(() => {
     if (user) {
       const savedCart = localStorage.getItem(`cart-${user.id}`);
@@ -36,11 +35,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setItems(JSON.parse(savedCart));
       }
     } else {
-      setItems([]); // Limpar carrinho quando não há usuário
+      setItems([]);
     }
   }, [user]);
 
-  // Persistir o carrinho no localStorage sempre que houver mudanças
   useEffect(() => {
     if (user) {
       localStorage.setItem(`cart-${user.id}`, JSON.stringify(items));
@@ -59,7 +57,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     setItems(currentItems => {
       const existingItem = currentItems.find(
-        item => item.id === product.id && item.size === product.size
+        item => 
+          item.id === product.id && 
+          item.size === product.size && 
+          item.color === product.color
       );
 
       if (existingItem) {
@@ -69,7 +70,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         });
 
         return currentItems.map(item =>
-          item.id === product.id && item.size === product.size
+          item.id === product.id && 
+          item.size === product.size && 
+          item.color === product.color
             ? { ...item, quantity: item.quantity + product.quantity }
             : item
         );
@@ -84,21 +87,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const removeItem = (id: number, size: string) => {
+  const removeItem = (id: string, size: string, color?: string) => {
     setItems(currentItems => 
-      currentItems.filter(item => !(item.id === id && item.size === size))
+      currentItems.filter(item => {
+        if (color) {
+          return !(item.id === id && item.size === size && item.color === color);
+        }
+        return !(item.id === id && item.size === size);
+      })
     );
   };
 
-  const updateQuantity = (id: number, size: string, quantity: number) => {
+  const updateQuantity = (id: string, size: string, quantity: number, color?: string) => {
     if (quantity < 1) return;
     
     setItems(currentItems =>
-      currentItems.map(item =>
-        item.id === id && item.size === size
+      currentItems.map(item => {
+        if (color) {
+          return (item.id === id && item.size === size && item.color === color)
+            ? { ...item, quantity }
+            : item;
+        }
+        return (item.id === id && item.size === size)
           ? { ...item, quantity }
-          : item
-      )
+          : item;
+      })
     );
   };
 
@@ -111,7 +124,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const getCartTotal = () => {
     const total = items.reduce((sum, item) => {
-      // Extrair apenas os números do preço, independente do formato (R$ ou €)
       const priceString = item.price.replace(/[^0-9,.]/g, '').replace(',', '.');
       const price = parseFloat(priceString);
       

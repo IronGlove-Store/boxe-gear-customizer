@@ -16,6 +16,7 @@ interface Product {
   color: string;
   colors?: string[];
   size: string;
+  sizes?: string[];
   image: string;
   description?: string;
   rating?: number;
@@ -30,6 +31,7 @@ interface AdminProduct {
   category: string;
   image_url: string;
   colors?: string[];
+  sizes?: string[];
   original_price?: number;
   created_at: string;
 }
@@ -40,6 +42,7 @@ const ProductDetail = () => {
   const { toast } = useToast();
   const { addItem } = useCart();
   const [selectedSize, setSelectedSize] = useState<string>("");
+  const [selectedColor, setSelectedColor] = useState<string>("");
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -68,11 +71,13 @@ const ProductDetail = () => {
             color: firstColor,
             colors: foundAdminProduct.colors || [],
             size: "Único",
+            sizes: foundAdminProduct.sizes || ["Único"],
             image: foundAdminProduct.image_url || "/placeholder.svg",
             description: foundAdminProduct.description,
             rating: 4.0,
             reviews: 0
           });
+          setSelectedColor(firstColor);
         } else {
           const hardcodedProducts: Product[] = [
             {
@@ -127,6 +132,9 @@ const ProductDetail = () => {
           ];
           
           const foundProduct = hardcodedProducts.find(p => p.id === id);
+          if (foundProduct && foundProduct.colors && foundProduct.colors.length > 0) {
+            setSelectedColor(foundProduct.colors[0]);
+          }
           setProduct(foundProduct || null);
         }
       } else {
@@ -183,6 +191,9 @@ const ProductDetail = () => {
         ];
         
         const foundProduct = hardcodedProducts.find(p => p.id === id);
+        if (foundProduct && foundProduct.colors && foundProduct.colors.length > 0) {
+          setSelectedColor(foundProduct.colors[0]);
+        }
         setProduct(foundProduct || null);
       }
     } catch (error) {
@@ -248,6 +259,7 @@ const ProductDetail = () => {
       image: product.image,
       quantity: 1,
       size: selectedSize,
+      color: selectedColor,
     });
     
     toast({
@@ -270,6 +282,10 @@ const ProductDetail = () => {
   };
 
   const getSizesForProduct = () => {
+    if (product.sizes && product.sizes.length > 0) {
+      return product.sizes;
+    }
+    
     const category = customizableProducts.categories.find(
       cat => cat.name.toLowerCase() === product.category.toLowerCase()
     );
@@ -344,23 +360,28 @@ const ProductDetail = () => {
 
             {product.colors && product.colors.length > 0 && (
               <div>
-                <h3 className="font-medium mb-3">Available Colors</h3>
+                <h3 className="font-medium mb-3">Cores</h3>
                 <div className="flex flex-wrap gap-3">
                   {product.colors.map((colorName) => {
                     const colorObj = customizableProducts.colors.find(c => c.name === colorName);
                     const colorValue = colorObj ? colorObj.value : "#777777";
                     
                     return (
-                      <div 
+                      <button 
                         key={colorName}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200"
+                        onClick={() => setSelectedColor(colorName)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
+                          selectedColor === colorName
+                            ? 'border-black bg-black text-white'
+                            : 'border-gray-200 hover:border-black'
+                        }`}
                       >
                         <span 
                           className="w-4 h-4 rounded-full border border-gray-300" 
                           style={{ backgroundColor: colorValue }}
                         />
                         <span>{colorName}</span>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -368,7 +389,7 @@ const ProductDetail = () => {
             )}
 
             <div>
-              <h3 className="font-medium mb-3">Available Sizes</h3>
+              <h3 className="font-medium mb-3">Tamanhos</h3>
               <div className="flex flex-wrap gap-3">
                 {availableSizes.map((size) => (
                   <button

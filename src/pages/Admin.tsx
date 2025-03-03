@@ -31,6 +31,7 @@ interface Product {
   category: string;
   image_url: string;
   colors?: string[];
+  sizes?: string[];
   created_at: string;
   original_price?: number;
 }
@@ -89,6 +90,7 @@ const Admin = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [availableColors, setAvailableColors] = useState<{name: string, value: string}[]>([]);
+  const [availableSizes, setAvailableSizes] = useState<string[]>([]);
   
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [productForm, setProductForm] = useState({
@@ -98,11 +100,17 @@ const Admin = () => {
     category: "",
     image_url: "/placeholder.svg",
     colors: [] as string[],
+    sizes: [] as string[],
     original_price: undefined as number | undefined
   });
   
   useEffect(() => {
     setAvailableColors(customizableProducts.colors);
+    
+    // Extract all unique sizes from customizableProducts
+    const allSizes = customizableProducts.categories.flatMap(cat => cat.sizes);
+    const uniqueSizes = [...new Set(allSizes)];
+    setAvailableSizes(uniqueSizes);
   }, []);
   
   useEffect(() => {
@@ -208,6 +216,7 @@ const Admin = () => {
       category: "",
       image_url: "/placeholder.svg",
       colors: [],
+      sizes: [],
       original_price: undefined
     });
     
@@ -226,6 +235,7 @@ const Admin = () => {
       category: product.category || "",
       image_url: product.image_url || "/placeholder.svg",
       colors: product.colors || [],
+      sizes: product.sizes || [],
       original_price: product.original_price
     });
   };
@@ -249,6 +259,7 @@ const Admin = () => {
       category: "",
       image_url: "/placeholder.svg",
       colors: [],
+      sizes: [],
       original_price: undefined
     });
     
@@ -266,6 +277,19 @@ const Admin = () => {
         colors: isSelected
           ? prev.colors.filter(c => c !== colorName)
           : [...prev.colors, colorName]
+      };
+    });
+  };
+  
+  const handleToggleSize = (size: string) => {
+    setProductForm(prev => {
+      const sizes = prev.sizes || [];
+      const isSelected = sizes.includes(size);
+      return {
+        ...prev,
+        sizes: isSelected
+          ? sizes.filter(s => s !== size)
+          : [...sizes, size]
       };
     });
   };
@@ -356,6 +380,7 @@ const Admin = () => {
                     category: "",
                     image_url: "/placeholder.svg",
                     colors: [],
+                    sizes: [],
                     original_price: undefined
                   });
                 }}
@@ -459,6 +484,26 @@ const Admin = () => {
                       ))}
                     </div>
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Tamanhos disponíveis</label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-1">
+                      {availableSizes.map((size) => (
+                        <div key={size} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`size-${size}`} 
+                            checked={(productForm.sizes || []).includes(size)}
+                            onCheckedChange={() => handleToggleSize(size)}
+                          />
+                          <label
+                            htmlFor={`size-${size}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            {size}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   <div className="mt-2">
                     <Button 
                       onClick={editingProduct ? handleSaveEdit : handleAddProduct}
@@ -478,6 +523,7 @@ const Admin = () => {
                             category: "",
                             image_url: "/placeholder.svg",
                             colors: [],
+                            sizes: [],
                             original_price: undefined
                           });
                         }}
@@ -511,6 +557,7 @@ const Admin = () => {
                           <th className="px-4 py-2 text-left">Preço</th>
                           <th className="px-4 py-2 text-left">Categoria</th>
                           <th className="px-4 py-2 text-left">Cores</th>
+                          <th className="px-4 py-2 text-left">Tamanhos</th>
                           <th className="px-4 py-2 text-right">Ações</th>
                         </tr>
                       </thead>
@@ -536,6 +583,19 @@ const Admin = () => {
                                   })
                                 ) : (
                                   <span className="text-gray-400">Padrão</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-2">
+                              <div className="flex gap-1">
+                                {product.sizes && product.sizes.length > 0 ? (
+                                  product.sizes.map(size => (
+                                    <span key={size} className="px-2 py-1 text-xs rounded-full bg-gray-200">
+                                      {size}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-gray-400">Único</span>
                                 )}
                               </div>
                             </td>
