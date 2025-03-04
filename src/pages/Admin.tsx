@@ -182,7 +182,7 @@ const Admin = () => {
     setUserError(null);
     
     try {
-      const userList = await clerk.users.getAll();
+      const userList = await clerk.users.getUsers();
       
       const formattedUsers: ClerkUser[] = userList.map(u => ({
         id: u.id,
