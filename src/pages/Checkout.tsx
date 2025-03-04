@@ -162,42 +162,43 @@ const Checkout = () => {
     setIsProcessing(true);
     
     try {
+      // Como o user.id do Clerk não é um UUID válido para o Supabase,
+      // vamos gerar um ID único para o endereço e para o pedido
+      const addressId = crypto.randomUUID();
+      const orderId = crypto.randomUUID();
+      
       // 1. Criar o endereço
-      const { data: addressData, error: addressError } = await supabase
+      const { error: addressError } = await supabase
         .from('addresses')
         .insert({
-          user_id: user.id,
+          id: addressId,
+          user_external_id: user.id, // Armazenamos o ID do Clerk num campo separado
           street: address.street,
           city: address.city,
           postal_code: address.postal_code,
           country: address.country
-        })
-        .select()
-        .single();
+        });
         
       if (addressError) throw addressError;
-      if (!addressData) throw new Error("Erro ao criar endereço");
       
       // 2. Criar o pedido
-      const { data: orderData, error: orderError } = await supabase
+      const { error: orderError } = await supabase
         .from('orders')
         .insert({
-          user_id: user.id,
-          address_id: addressData.id,
+          id: orderId,
+          user_external_id: user.id,
+          address_id: addressId,
           shipping_method_id: selectedShippingMethod,
           payment_method: paymentMethod,
           total_amount: orderTotal,
           status: paymentMethod === 'test_card' ? 'completed' : 'processing'
-        })
-        .select()
-        .single();
+        });
         
       if (orderError) throw orderError;
-      if (!orderData) throw new Error("Erro ao criar pedido");
       
       // 3. Adicionar itens ao pedido
       const orderItems = items.map(item => ({
-        order_id: orderData.id,
+        order_id: orderId,
         product_id: item.id,
         quantity: item.quantity,
         price: parseFloat(item.price.replace('€', '').trim()),
@@ -218,13 +219,13 @@ const Checkout = () => {
         const { error: updateError } = await supabase
           .from('orders')
           .update({ status: 'completed' })
-          .eq('id', orderData.id);
+          .eq('id', orderId);
           
         if (updateError) throw updateError;
       }
       
       // Salvar o ID do pedido e mostrar mensagem de sucesso
-      setOrderId(orderData.id);
+      setOrderId(orderId);
       setShowSuccessDialog(true);
       
       // Limpar o carrinho
