@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useUser, useClerk } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
@@ -97,7 +98,7 @@ const initialOrders: Order[] = [
 
 const Admin = () => {
   const { user, isSignedIn, isLoaded } = useUser();
-  const { users } = useClerk();
+  const clerk = useClerk();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("products");
@@ -173,7 +174,7 @@ const Admin = () => {
   }, [activeTab, isAdmin]);
 
   const fetchClerkUsers = async () => {
-    if (!users) {
+    if (!clerk) {
       setUserError("A API do Clerk não está disponível");
       return;
     }
@@ -182,7 +183,8 @@ const Admin = () => {
     setUserError(null);
     
     try {
-      const userList = await users.getUserList();
+      // Use clerk.users.getUserList instead of users.getUserList
+      const userList = await clerk.users.getUserList();
       
       const formattedUsers: ClerkUser[] = userList.map(u => ({
         id: u.id,
