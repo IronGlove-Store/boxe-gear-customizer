@@ -1,5 +1,6 @@
+
 import { useEffect, useState } from "react";
-import { useUser, useClerk } from "@clerk/clerk-react";
+import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,15 +16,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Package, 
   ShoppingBag, 
-  Users, 
   Settings,
   PlusCircle,
   Edit,
   Trash,
-  UserPlus,
-  Mail,
-  Phone,
-  AlertTriangle,
   RefreshCw
 } from "lucide-react";
 import customizableProducts from "@/data/customizableProducts.json";
@@ -50,16 +46,6 @@ interface Order {
   shipping_method: string;
   shipping_days: string;
   user_id?: string;
-}
-
-interface ClerkUser {
-  id: string;
-  firstName?: string;
-  lastName?: string;
-  emailAddress?: string;
-  imageUrl?: string;
-  createdAt: Date;
-  lastSignInAt?: Date;
 }
 
 const initialProducts: Product[] = [
@@ -97,7 +83,6 @@ const initialOrders: Order[] = [
 
 const Admin = () => {
   const { user, isSignedIn, isLoaded } = useUser();
-  const clerk = useClerk();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("products");
@@ -119,10 +104,6 @@ const Admin = () => {
     sizes: [] as string[],
     original_price: undefined as number | undefined
   });
-  
-  const [clerkUsers, setClerkUsers] = useState<ClerkUser[]>([]);
-  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
-  const [userError, setUserError] = useState<string | null>(null);
   
   useEffect(() => {
     setAvailableColors(customizableProducts.colors);
@@ -165,43 +146,6 @@ const Admin = () => {
 
     loadData();
   }, [isSignedIn, isLoaded, navigate, user, toast]);
-  
-  useEffect(() => {
-    if (activeTab === "customers" && isAdmin) {
-      fetchClerkUsers();
-    }
-  }, [activeTab, isAdmin]);
-
-  const fetchClerkUsers = async () => {
-    if (!clerk) {
-      setUserError("A API do Clerk não está disponível");
-      return;
-    }
-
-    setIsLoadingUsers(true);
-    setUserError(null);
-    
-    try {
-      const userList = await clerk.users.getUsers();
-      
-      const formattedUsers: ClerkUser[] = userList.map(u => ({
-        id: u.id,
-        firstName: u.firstName || "",
-        lastName: u.lastName || "",
-        emailAddress: u.emailAddresses[0]?.emailAddress,
-        imageUrl: u.imageUrl,
-        createdAt: new Date(u.createdAt),
-        lastSignInAt: u.lastSignInAt ? new Date(u.lastSignInAt) : undefined
-      }));
-      
-      setClerkUsers(formattedUsers);
-    } catch (error) {
-      console.error("Erro ao carregar usuários do Clerk:", error);
-      setUserError("Não foi possível carregar os usuários. Verifique se você tem permissões de administrador no Clerk.");
-    } finally {
-      setIsLoadingUsers(false);
-    }
-  };
 
   const loadData = () => {
     setIsLoading(true);
@@ -375,17 +319,6 @@ const Admin = () => {
     });
   };
 
-  const formatDate = (date: Date | undefined) => {
-    if (!date) return "N/A";
-    return new Intl.DateTimeFormat('pt-PT', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
-  };
-
   if (!isLoaded) {
     return <div className="p-8 text-center">Carregando...</div>;
   }
@@ -414,7 +347,7 @@ const Admin = () => {
         </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid grid-cols-4 md:w-auto">
+          <TabsList className="grid grid-cols-3 md:w-auto">
             <TabsTrigger value="products" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               <span className="hidden md:inline">Produtos</span>
@@ -422,10 +355,6 @@ const Admin = () => {
             <TabsTrigger value="orders" className="flex items-center gap-2">
               <ShoppingBag className="h-4 w-4" />
               <span className="hidden md:inline">Pedidos</span>
-            </TabsTrigger>
-            <TabsTrigger value="customers" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              <span className="hidden md:inline">Clientes</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -762,140 +691,6 @@ const Admin = () => {
                     </table>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="customers" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Gerenciar Clientes</h2>
-              <Button 
-                onClick={fetchClerkUsers}
-                className="flex items-center gap-2"
-                disabled={isLoadingUsers}
-                variant="outline"
-              >
-                <RefreshCw className={`h-4 w-4 ${isLoadingUsers ? "animate-spin" : ""}`} />
-                Atualizar
-              </Button>
-            </div>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Clientes registrados</CardTitle>
-                <CardDescription>
-                  Lista de todos os usuários registrados através do Clerk
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoadingUsers ? (
-                  <div className="flex justify-center p-8">
-                    <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
-                  </div>
-                ) : userError ? (
-                  <div className="p-8 text-center">
-                    <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-                    <p className="text-gray-600 mb-4">{userError}</p>
-                    <Button variant="outline" onClick={fetchClerkUsers}>
-                      Tentar novamente
-                    </Button>
-                  </div>
-                ) : clerkUsers.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <UserPlus className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 mb-4">Nenhum usuário registrado ainda</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="px-4 py-2 text-left">Nome</th>
-                          <th className="px-4 py-2 text-left">Email</th>
-                          <th className="px-4 py-2 text-left">Data de registro</th>
-                          <th className="px-4 py-2 text-left">Último login</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {clerkUsers.map((client) => (
-                          <tr key={client.id} className="border-b">
-                            <td className="px-4 py-2">
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200">
-                                  {client.imageUrl ? (
-                                    <img 
-                                      src={client.imageUrl} 
-                                      alt={`${client.firstName} ${client.lastName}`} 
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <Users className="h-4 w-4 m-2 text-gray-500" />
-                                  )}
-                                </div>
-                                <span>
-                                  {client.firstName && client.lastName 
-                                    ? `${client.firstName} ${client.lastName}`
-                                    : "Usuário"}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-2">
-                              <div className="flex items-center gap-2">
-                                <Mail className="h-4 w-4 text-gray-500" />
-                                {client.emailAddress || "Email não disponível"}
-                              </div>
-                            </td>
-                            <td className="px-4 py-2">
-                              {formatDate(client.createdAt)}
-                            </td>
-                            <td className="px-4 py-2">
-                              {formatDate(client.lastSignInAt) || "Nunca"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Informações de integração</CardTitle>
-                <CardDescription>
-                  Como os dados de usuários são gerenciados
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-medium">Integração com Clerk</h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Os dados dos usuários são gerenciados pelo Clerk. 
-                      Esta visualização permite que você veja informações básicas dos usuários 
-                      sem precisar acessar o dashboard do Clerk.
-                    </p>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-                    <h4 className="font-medium text-sm mb-2">Funcionalidades disponíveis:</h4>
-                    <ul className="text-sm text-gray-600 space-y-1">
-                      <li className="flex items-center gap-2">
-                        <span className="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center">
-                          <span className="block w-2 h-2 rounded-full bg-green-500"></span>
-                        </span>
-                        Visualização de dados básicos dos usuários
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center">
-                          <span className="block w-2 h-2 rounded-full bg-green-500"></span>
-                        </span>
-                        Atualização em tempo real
-                      </li>
-                    </ul>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
