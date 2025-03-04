@@ -24,7 +24,6 @@ import {
 import { Loader2, CreditCard, Truck, Home, CheckCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useCart } from "@/contexts/CartContext";
-import { supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
 
 interface ShippingMethod {
@@ -42,6 +41,31 @@ interface Address {
   country: string;
 }
 
+// Mock shipping methods since we're not using Supabase
+const MOCK_SHIPPING_METHODS: ShippingMethod[] = [
+  {
+    id: "standard",
+    name: "Envio Standard",
+    price: 4.99,
+    estimated_days: "3-5 dias úteis",
+    is_test: false
+  },
+  {
+    id: "express",
+    name: "Envio Expresso",
+    price: 9.99,
+    estimated_days: "1-2 dias úteis",
+    is_test: false
+  },
+  {
+    id: "free",
+    name: "Envio Gratuito",
+    price: 0,
+    estimated_days: "5-7 dias úteis (para compras acima de €50)",
+    is_test: true
+  }
+];
+
 const Checkout = () => {
   const { user, isSignedIn } = useUser();
   const navigate = useNavigate();
@@ -55,7 +79,7 @@ const Checkout = () => {
     country: "Portugal",
   });
   
-  const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
+  const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>(MOCK_SHIPPING_METHODS);
   const [selectedShippingMethod, setSelectedShippingMethod] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string>("card");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -71,35 +95,12 @@ const Checkout = () => {
   const shippingCost = selectedShipping ? selectedShipping.price : 0;
   const orderTotal = cartTotal + shippingCost;
   
-  // Buscar os métodos de envio do banco de dados
+  // Definir primeiro método de envio como padrão
   useEffect(() => {
-    async function fetchShippingMethods() {
-      try {
-        const { data, error } = await supabase
-          .from('shipping_methods')
-          .select('*');
-          
-        if (error) throw error;
-        if (data) {
-          setShippingMethods(data);
-          
-          // Selecionar o primeiro método de envio por padrão
-          if (data.length > 0 && !selectedShippingMethod) {
-            setSelectedShippingMethod(data[0].id);
-          }
-        }
-      } catch (error) {
-        console.error('Erro ao buscar métodos de envio:', error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar os métodos de envio.",
-          variant: "destructive",
-        });
-      }
+    if (shippingMethods.length > 0 && !selectedShippingMethod) {
+      setSelectedShippingMethod(shippingMethods[0].id);
     }
-    
-    fetchShippingMethods();
-  }, [toast, selectedShippingMethod]);
+  }, [shippingMethods, selectedShippingMethod]);
   
   // Verificar se o usuário está autenticado
   useEffect(() => {
@@ -162,67 +163,44 @@ const Checkout = () => {
     setIsProcessing(true);
     
     try {
-      // Como o user.id do Clerk não é um UUID válido para o Supabase,
-      // vamos gerar um ID único para o endereço e para o pedido
-      const addressId = crypto.randomUUID();
+      // Gerar IDs únicos para o pedido
       const orderId = crypto.randomUUID();
       
-      // 1. Criar o endereço
-      const { error: addressError } = await supabase
-        .from('addresses')
-        .insert({
-          id: addressId,
-          user_external_id: user.id, // Armazenamos o ID do Clerk num campo separado
-          street: address.street,
-          city: address.city,
-          postal_code: address.postal_code,
-          country: address.country
-        });
-        
-      if (addressError) throw addressError;
+      // Criar objeto de pedido
+      const order = {
+        id: orderId,
+        userId: user.id,
+        items: items.map(item => ({
+          productId: item.id,
+          name: item.name,
+          price: parseFloat(item.price.replace('€', '').trim()),
+          quantity: item.quantity,
+          size: item.size,
+          color: item.color
+        })),
+        address: {
+          ...address
+        },
+        shippingMethod: selectedShippingMethod,
+        paymentMethod: paymentMethod,
+        totalAmount: orderTotal,
+        status: paymentMethod === 'test_card' ? 'completed' : 'processing',
+        createdAt: new Date().toISOString()
+      };
       
-      // 2. Criar o pedido
-      const { error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          id: orderId,
-          user_external_id: user.id,
-          address_id: addressId,
-          shipping_method_id: selectedShippingMethod,
-          payment_method: paymentMethod,
-          total_amount: orderTotal,
-          status: paymentMethod === 'test_card' ? 'completed' : 'processing'
-        });
-        
-      if (orderError) throw orderError;
+      // Salvar pedido no localStorage
+      let userOrders = [];
+      const savedOrders = localStorage.getItem(`orders-${user.id}`);
       
-      // 3. Adicionar itens ao pedido
-      const orderItems = items.map(item => ({
-        order_id: orderId,
-        product_id: item.id,
-        quantity: item.quantity,
-        price: parseFloat(item.price.replace('€', '').trim()),
-        size: item.size
-      }));
+      if (savedOrders) {
+        userOrders = JSON.parse(savedOrders);
+      }
       
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-        
-      if (itemsError) throw itemsError;
+      userOrders.push(order);
+      localStorage.setItem(`orders-${user.id}`, JSON.stringify(userOrders));
       
       // Simular processamento de pagamento (2 segundos)
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Se for cartão de teste, marcar como concluído automaticamente
-      if (paymentMethod === 'test_card') {
-        const { error: updateError } = await supabase
-          .from('orders')
-          .update({ status: 'completed' })
-          .eq('id', orderId);
-          
-        if (updateError) throw updateError;
-      }
       
       // Salvar o ID do pedido e mostrar mensagem de sucesso
       setOrderId(orderId);
