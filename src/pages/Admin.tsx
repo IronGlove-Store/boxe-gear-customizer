@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useUser, useClerk } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
@@ -183,8 +182,7 @@ const Admin = () => {
     setUserError(null);
     
     try {
-      // Use clerk.users.getUserList instead of users.getUserList
-      const userList = await clerk.users.getUserList();
+      const userList = await clerk.users.getAll();
       
       const formattedUsers: ClerkUser[] = userList.map(u => ({
         id: u.id,
