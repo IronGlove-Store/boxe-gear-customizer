@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useCart } from '@/contexts/CartContext';
@@ -57,7 +58,7 @@ const ProductCustomizer = () => {
     const price = currentCategory.basePrice * selectedMaterial.priceMultiplier;
     
     addItem({
-      id: Date.now(),
+      id: Date.now().toString(), // Convert number to string to match CartItem.id type
       name: `${colorName} ${selectedMaterial.name} ${currentCategory.name}`,
       price: `€ ${price.toFixed(2)}`,
       image: currentCategory.image,
