@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
@@ -85,29 +84,24 @@ const Checkout = () => {
   const [orderId, setOrderId] = useState<string | null>(null);
   const [selectedDeliveryPoint, setSelectedDeliveryPoint] = useState<DeliveryPoint | null>(null);
   
-  // Format cart total as number
   const cartTotalString = getCartTotal().replace('€', '').trim();
   const cartTotal = parseFloat(cartTotalString);
   
-  // Calculate order total including shipping
   const selectedShipping = shippingMethods.find(m => m.id === selectedShippingMethod);
   const shippingCost = selectedShipping ? selectedShipping.price : 0;
   const orderTotal = cartTotal + shippingCost;
   
-  // Get the selected shipping method object
   const currentShippingMethod = shippingMethods.find(m => m.id === selectedShippingMethod);
   const requiresAddress = currentShippingMethod?.requires_address || false;
   const isTestShipping = currentShippingMethod?.is_test || false;
   const isPickupShipping = selectedShippingMethod === 'pickup';
   
-  // Set first shipping method as default
   useEffect(() => {
     if (shippingMethods.length > 0 && !selectedShippingMethod) {
       setSelectedShippingMethod(shippingMethods[0].id);
     }
   }, [shippingMethods, selectedShippingMethod]);
   
-  // Check if user is authenticated
   useEffect(() => {
     if (!isSignedIn) {
       toast({
@@ -119,7 +113,6 @@ const Checkout = () => {
     }
   }, [isSignedIn, navigate, toast]);
   
-  // Check if cart is empty
   useEffect(() => {
     if (isSignedIn && items.length === 0) {
       toast({
@@ -130,7 +123,6 @@ const Checkout = () => {
     }
   }, [items, navigate, toast, isSignedIn]);
   
-  // Reset delivery point when shipping method changes
   useEffect(() => {
     if (!isPickupShipping) {
       setSelectedDeliveryPoint(null);
@@ -147,12 +139,10 @@ const Checkout = () => {
   const isFormValid = () => {
     if (!selectedShippingMethod) return false;
     
-    // If pickup shipping, check if delivery point is selected
     if (isPickupShipping) {
       return selectedDeliveryPoint !== null;
     }
     
-    // If shipping method requires address, check address fields
     if (requiresAddress && !isTestShipping) {
       return (
         address.street.trim() !== "" &&
@@ -161,7 +151,6 @@ const Checkout = () => {
       );
     }
     
-    // If shipping method doesn't require address or is test, form is valid
     return true;
   };
   
@@ -187,10 +176,8 @@ const Checkout = () => {
     setIsProcessing(true);
     
     try {
-      // Generate unique ID for order
       const orderId = crypto.randomUUID();
       
-      // Create delivery information based on shipping method
       let deliveryInfo = null;
       
       if (isPickupShipping && selectedDeliveryPoint) {
@@ -210,7 +197,6 @@ const Checkout = () => {
         };
       }
       
-      // Create order object
       const order = {
         id: orderId,
         userId: user.id,
@@ -230,7 +216,6 @@ const Checkout = () => {
         created_at: new Date().toISOString()
       };
       
-      // Save order in localStorage
       let userOrders = [];
       const savedOrders = localStorage.getItem(`orders-${user.id}`);
       
@@ -241,7 +226,6 @@ const Checkout = () => {
       userOrders.push(order);
       localStorage.setItem(`orders-${user.id}`, JSON.stringify(userOrders));
       
-      // Save order in admin orders
       let adminOrders = [];
       const savedAdminOrders = localStorage.getItem('admin_orders');
       
@@ -264,14 +248,11 @@ const Checkout = () => {
       adminOrders.push(adminOrder);
       localStorage.setItem('admin_orders', JSON.stringify(adminOrders));
       
-      // Simulate payment processing (2 seconds)
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Save order ID and show success message
       setOrderId(orderId);
       setShowSuccessDialog(true);
       
-      // Clear cart
       clearCart();
       
     } catch (error) {
@@ -299,23 +280,19 @@ const Checkout = () => {
         <h1 className="text-3xl font-bold mb-8">Checkout</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Formulário de endereço e métodos */}
           <div className="md:col-span-2 space-y-6">
-            {/* Métodos de envio */}
             <ShippingMethodSelector
               shippingMethods={shippingMethods}
               selectedShippingMethod={selectedShippingMethod}
               onSelectShippingMethod={setSelectedShippingMethod}
             />
             
-            {/* Mapa de seleção de ponto de entrega (apenas para método de recolha) */}
             <DeliveryPointMap
               isRequired={isPickupShipping}
               selectedDeliveryPoint={selectedDeliveryPoint}
               onSelectDeliveryPoint={setSelectedDeliveryPoint}
             />
             
-            {/* Formulário de endereço (apenas mostrado se o método de envio selecionado exigir endereço) */}
             {requiresAddress && !isTestShipping && (
               <AddressForm
                 address={address}
@@ -323,14 +300,12 @@ const Checkout = () => {
               />
             )}
             
-            {/* Método de pagamento */}
             <PaymentMethodSelector
               paymentMethod={paymentMethod}
               onSelectPaymentMethod={setPaymentMethod}
             />
           </div>
           
-          {/* Resumo do pedido */}
           <div>
             <OrderSummary
               items={items}
@@ -345,7 +320,6 @@ const Checkout = () => {
         </div>
       </div>
       
-      {/* Diálogo de sucesso */}
       <SuccessDialog
         open={showSuccessDialog}
         onOpenChange={setShowSuccessDialog}
