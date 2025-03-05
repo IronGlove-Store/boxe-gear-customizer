@@ -1,18 +1,56 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CreditCard } from "lucide-react";
+import { CreditCard, Calendar } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface PaymentMethodSelectorProps {
   paymentMethod: string;
   onSelectPaymentMethod: (methodId: string) => void;
 }
 
+interface CardDetails {
+  cardNumber: string;
+  cardHolder: string;
+  expiryDate: string;
+  cvv: string;
+}
+
 const PaymentMethodSelector = ({ 
   paymentMethod, 
   onSelectPaymentMethod 
 }: PaymentMethodSelectorProps) => {
+  const [cardDetails, setCardDetails] = useState<CardDetails>({
+    cardNumber: '',
+    cardHolder: '',
+    expiryDate: '',
+    cvv: ''
+  });
+
+  const handleCardDetailChange = (field: keyof CardDetails, value: string) => {
+    setCardDetails(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Format card number with spaces every 4 digits
+  const formatCardNumber = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    const formattedValue = digits.replace(/(\d{4})(?=\d)/g, '$1 ');
+    return formattedValue.substring(0, 19); // 16 digits + 3 spaces
+  };
+
+  // Format expiry date as MM/YY
+  const formatExpiryDate = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length > 2) {
+      return `${digits.substring(0, 2)}/${digits.substring(2, 4)}`;
+    }
+    return digits;
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -39,6 +77,73 @@ const PaymentMethodSelector = ({
               <p className="text-sm text-gray-500 mt-1">
                 Pagamento seguro via cartão
               </p>
+
+              {paymentMethod === 'card' && (
+                <div className="mt-4 space-y-3 animate-fade-in">
+                  <div>
+                    <label htmlFor="cardNumber" className="text-sm font-medium block mb-1">
+                      Número do Cartão
+                    </label>
+                    <Input 
+                      id="cardNumber" 
+                      placeholder="1234 5678 9012 3456"
+                      value={cardDetails.cardNumber}
+                      onChange={(e) => handleCardDetailChange('cardNumber', formatCardNumber(e.target.value))}
+                      className="font-mono"
+                      maxLength={19}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="cardHolder" className="text-sm font-medium block mb-1">
+                      Nome no Cartão
+                    </label>
+                    <Input 
+                      id="cardHolder" 
+                      placeholder="NOME COMPLETO"
+                      value={cardDetails.cardHolder}
+                      onChange={(e) => handleCardDetailChange('cardHolder', e.target.value.toUpperCase())}
+                      className="uppercase"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="expiryDate" className="text-sm font-medium block mb-1">
+                        Validade
+                      </label>
+                      <Input 
+                        id="expiryDate" 
+                        placeholder="MM/AA"
+                        value={cardDetails.expiryDate}
+                        onChange={(e) => handleCardDetailChange('expiryDate', formatExpiryDate(e.target.value))}
+                        className="font-mono"
+                        maxLength={5}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="cvv" className="text-sm font-medium block mb-1">
+                        CVV
+                      </label>
+                      <Input 
+                        id="cvv" 
+                        placeholder="123"
+                        value={cardDetails.cvv}
+                        onChange={(e) => handleCardDetailChange('cvv', e.target.value.replace(/\D/g, '').substring(0, 3))}
+                        className="font-mono"
+                        maxLength={3}
+                        type="password"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mt-2 text-xs text-blue-600 flex items-center gap-1">
+                    <span>Dados armazenados de forma segura</span>
+                    <span className="text-xs text-gray-500">(demonstração - nenhum dado real é processado)</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           
