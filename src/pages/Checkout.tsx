@@ -10,6 +10,7 @@ import ShippingMethodSelector, { ShippingMethod } from "@/components/checkout/Sh
 import PaymentMethodSelector from "@/components/checkout/PaymentMethodSelector";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import SuccessDialog from "@/components/checkout/SuccessDialog";
+import DeliveryPointMap from "@/components/checkout/DeliveryPointMap";
 
 // Mock shipping methods
 const MOCK_SHIPPING_METHODS: ShippingMethod[] = [
@@ -30,6 +31,14 @@ const MOCK_SHIPPING_METHODS: ShippingMethod[] = [
     requires_address: true
   },
   {
+    id: "pickup",
+    name: "Recolha em Ponto de Entrega",
+    price: 2.99,
+    estimated_days: "2-4 dias úteis",
+    is_test: false,
+    requires_address: false
+  },
+  {
     id: "free",
     name: "Envio Gratuito",
     price: 0,
@@ -46,6 +55,14 @@ const MOCK_SHIPPING_METHODS: ShippingMethod[] = [
     requires_address: false
   }
 ];
+
+interface DeliveryPoint {
+  id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+}
 
 const Checkout = () => {
   const { user, isSignedIn } = useUser();
@@ -66,6 +83,7 @@ const Checkout = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [selectedDeliveryPoint, setSelectedDeliveryPoint] = useState<DeliveryPoint | null>(null);
   
   // Format cart total as number
   const cartTotalString = getCartTotal().replace('€', '').trim();
@@ -75,6 +93,12 @@ const Checkout = () => {
   const selectedShipping = shippingMethods.find(m => m.id === selectedShippingMethod);
   const shippingCost = selectedShipping ? selectedShipping.price : 0;
   const orderTotal = cartTotal + shippingCost;
+  
+  // Get the selected shipping method object
+  const currentShippingMethod = shippingMethods.find(m => m.id === selectedShippingMethod);
+  const requiresAddress = currentShippingMethod?.requires_address || false;
+  const isTestShipping = currentShippingMethod?.is_test || false;
+  const isPickupShipping = selectedShippingMethod === 'pickup';
   
   // Set first shipping method as default
   useEffect(() => {
@@ -106,6 +130,13 @@ const Checkout = () => {
     }
   }, [items, navigate, toast, isSignedIn]);
   
+  // Reset delivery point when shipping method changes
+  useEffect(() => {
+    if (!isPickupShipping) {
+      setSelectedDeliveryPoint(null);
+    }
+  }, [isPickupShipping]);
+  
   const handleAddressChange = (field: string, value: string) => {
     setAddress(prev => ({
       ...prev,
@@ -116,10 +147,13 @@ const Checkout = () => {
   const isFormValid = () => {
     if (!selectedShippingMethod) return false;
     
-    const shipping = shippingMethods.find(m => m.id === selectedShippingMethod);
+    // If pickup shipping, check if delivery point is selected
+    if (isPickupShipping) {
+      return selectedDeliveryPoint !== null;
+    }
     
     // If shipping method requires address, check address fields
-    if (shipping?.requires_address) {
+    if (requiresAddress && !isTestShipping) {
       return (
         address.street.trim() !== "" &&
         address.city.trim() !== "" &&
@@ -127,7 +161,7 @@ const Checkout = () => {
       );
     }
     
-    // If shipping method doesn't require address, form is valid
+    // If shipping method doesn't require address or is test, form is valid
     return true;
   };
   
@@ -156,6 +190,26 @@ const Checkout = () => {
       // Generate unique ID for order
       const orderId = crypto.randomUUID();
       
+      // Create delivery information based on shipping method
+      let deliveryInfo = null;
+      
+      if (isPickupShipping && selectedDeliveryPoint) {
+        deliveryInfo = {
+          type: "pickup",
+          deliveryPoint: selectedDeliveryPoint
+        };
+      } else if (requiresAddress && !isTestShipping) {
+        deliveryInfo = {
+          type: "address",
+          address: { ...address }
+        };
+      } else {
+        deliveryInfo = {
+          type: "test",
+          note: "Envio de teste (sem endereço)"
+        };
+      }
+      
       // Create order object
       const order = {
         id: orderId,
@@ -168,7 +222,7 @@ const Checkout = () => {
           size: item.size,
           color: item.color
         })),
-        address: selectedShipping?.requires_address ? { ...address } : null,
+        deliveryInfo,
         shippingMethod: selectedShippingMethod,
         paymentMethod: paymentMethod,
         total_amount: orderTotal,
@@ -203,7 +257,8 @@ const Checkout = () => {
         payment_method: paymentMethod,
         shipping_method: selectedShipping?.name || "Envio de Teste",
         shipping_days: selectedShipping?.estimated_days || "Instantâneo",
-        user_id: user.id
+        user_id: user.id,
+        delivery_type: deliveryInfo?.type
       };
       
       adminOrders.push(adminOrder);
@@ -236,10 +291,6 @@ const Checkout = () => {
     navigate("/success");
   };
   
-  // Get the selected shipping method object
-  const currentShippingMethod = shippingMethods.find(m => m.id === selectedShippingMethod);
-  const requiresAddress = currentShippingMethod?.requires_address || false;
-  
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
@@ -257,8 +308,15 @@ const Checkout = () => {
               onSelectShippingMethod={setSelectedShippingMethod}
             />
             
+            {/* Mapa de seleção de ponto de entrega (apenas para método de recolha) */}
+            <DeliveryPointMap
+              isRequired={isPickupShipping}
+              selectedDeliveryPoint={selectedDeliveryPoint}
+              onSelectDeliveryPoint={setSelectedDeliveryPoint}
+            />
+            
             {/* Formulário de endereço (apenas mostrado se o método de envio selecionado exigir endereço) */}
-            {requiresAddress && (
+            {requiresAddress && !isTestShipping && (
               <AddressForm
                 address={address}
                 onAddressChange={handleAddressChange}

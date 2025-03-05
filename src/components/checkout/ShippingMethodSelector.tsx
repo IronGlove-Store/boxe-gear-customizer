@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Truck } from "lucide-react";
+import { Truck, MapPin } from "lucide-react";
 
 export interface ShippingMethod {
   id: string;
@@ -49,12 +49,24 @@ const ShippingMethodSelector = ({
               
               <div className="flex-1">
                 <div className="flex justify-between">
-                  <h3 className="font-medium">{method.name}</h3>
+                  <h3 className="font-medium flex items-center gap-2">
+                    {method.id === 'pickup' ? (
+                      <>
+                        <MapPin className="w-4 h-4" />
+                        {method.name}
+                      </>
+                    ) : (
+                      method.name
+                    )}
+                  </h3>
                   <span className="font-medium">€ {method.price.toFixed(2)}</span>
                 </div>
                 <p className="text-sm text-gray-500 mt-1">{method.estimated_days}</p>
                 {method.is_test && (
                   <p className="text-xs text-blue-600 mt-1">Opção para demonstração (não requer endereço)</p>
+                )}
+                {method.id === 'pickup' && (
+                  <p className="text-xs text-green-600 mt-1">Selecione um ponto de entrega no mapa</p>
                 )}
               </div>
             </div>
