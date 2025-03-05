@@ -32,6 +32,7 @@ interface ShippingMethod {
   price: number;
   estimated_days: string;
   is_test: boolean;
+  requires_address: boolean;
 }
 
 interface Address {
@@ -41,28 +42,39 @@ interface Address {
   country: string;
 }
 
-// Mock shipping methods since we're not using Supabase
+// Mock shipping methods
 const MOCK_SHIPPING_METHODS: ShippingMethod[] = [
   {
     id: "standard",
     name: "Envio Standard",
     price: 4.99,
     estimated_days: "3-5 dias úteis",
-    is_test: false
+    is_test: false,
+    requires_address: true
   },
   {
     id: "express",
     name: "Envio Expresso",
     price: 9.99,
     estimated_days: "1-2 dias úteis",
-    is_test: false
+    is_test: false,
+    requires_address: true
   },
   {
     id: "free",
     name: "Envio Gratuito",
     price: 0,
     estimated_days: "5-7 dias úteis (para compras acima de €50)",
-    is_test: true
+    is_test: false,
+    requires_address: true
+  },
+  {
+    id: "test",
+    name: "Envio de Teste",
+    price: 0,
+    estimated_days: "Instantâneo (apenas para teste)",
+    is_test: true,
+    requires_address: false
   }
 ];
 
@@ -86,23 +98,23 @@ const Checkout = () => {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   
-  // Formatar o total do carrinho como número
+  // Format cart total as number
   const cartTotalString = getCartTotal().replace('€', '').trim();
   const cartTotal = parseFloat(cartTotalString);
   
-  // Calcular o total do pedido incluindo o frete
+  // Calculate order total including shipping
   const selectedShipping = shippingMethods.find(m => m.id === selectedShippingMethod);
   const shippingCost = selectedShipping ? selectedShipping.price : 0;
   const orderTotal = cartTotal + shippingCost;
   
-  // Definir primeiro método de envio como padrão
+  // Set first shipping method as default
   useEffect(() => {
     if (shippingMethods.length > 0 && !selectedShippingMethod) {
       setSelectedShippingMethod(shippingMethods[0].id);
     }
   }, [shippingMethods, selectedShippingMethod]);
   
-  // Verificar se o usuário está autenticado
+  // Check if user is authenticated
   useEffect(() => {
     if (!isSignedIn) {
       toast({
@@ -114,16 +126,16 @@ const Checkout = () => {
     }
   }, [isSignedIn, navigate, toast]);
   
-  // Verificar se o carrinho está vazio
+  // Check if cart is empty
   useEffect(() => {
-    if (items.length === 0) {
+    if (isSignedIn && items.length === 0) {
       toast({
         title: "Carrinho vazio",
         description: "Adicione produtos ao carrinho antes de finalizar a compra.",
       });
       navigate("/catalog");
     }
-  }, [items, navigate, toast]);
+  }, [items, navigate, toast, isSignedIn]);
   
   const handleAddressChange = (field: keyof Address, value: string) => {
     setAddress(prev => ({
@@ -133,12 +145,21 @@ const Checkout = () => {
   };
   
   const isFormValid = () => {
-    return (
-      address.street.trim() !== "" &&
-      address.city.trim() !== "" &&
-      address.postal_code.trim() !== "" &&
-      selectedShippingMethod !== null
-    );
+    if (!selectedShippingMethod) return false;
+    
+    const shipping = shippingMethods.find(m => m.id === selectedShippingMethod);
+    
+    // If shipping method requires address, check address fields
+    if (shipping?.requires_address) {
+      return (
+        address.street.trim() !== "" &&
+        address.city.trim() !== "" &&
+        address.postal_code.trim() !== ""
+      );
+    }
+    
+    // If shipping method doesn't require address, form is valid
+    return true;
   };
   
   const handlePlaceOrder = async () => {
@@ -163,10 +184,10 @@ const Checkout = () => {
     setIsProcessing(true);
     
     try {
-      // Gerar IDs únicos para o pedido
+      // Generate unique ID for order
       const orderId = crypto.randomUUID();
       
-      // Criar objeto de pedido
+      // Create order object
       const order = {
         id: orderId,
         userId: user.id,
@@ -178,17 +199,15 @@ const Checkout = () => {
           size: item.size,
           color: item.color
         })),
-        address: {
-          ...address
-        },
+        address: selectedShipping?.requires_address ? { ...address } : null,
         shippingMethod: selectedShippingMethod,
         paymentMethod: paymentMethod,
-        totalAmount: orderTotal,
+        total_amount: orderTotal,
         status: paymentMethod === 'test_card' ? 'completed' : 'processing',
-        createdAt: new Date().toISOString()
+        created_at: new Date().toISOString()
       };
       
-      // Salvar pedido no localStorage
+      // Save order in localStorage
       let userOrders = [];
       const savedOrders = localStorage.getItem(`orders-${user.id}`);
       
@@ -199,14 +218,36 @@ const Checkout = () => {
       userOrders.push(order);
       localStorage.setItem(`orders-${user.id}`, JSON.stringify(userOrders));
       
-      // Simular processamento de pagamento (2 segundos)
+      // Save order in admin orders
+      let adminOrders = [];
+      const savedAdminOrders = localStorage.getItem('admin_orders');
+      
+      if (savedAdminOrders) {
+        adminOrders = JSON.parse(savedAdminOrders);
+      }
+      
+      const adminOrder = {
+        id: orderId,
+        status: paymentMethod === 'test_card' ? 'completed' : 'processing',
+        total_amount: orderTotal,
+        created_at: new Date().toISOString(),
+        payment_method: paymentMethod,
+        shipping_method: selectedShipping?.name || "Envio de Teste",
+        shipping_days: selectedShipping?.estimated_days || "Instantâneo",
+        user_id: user.id
+      };
+      
+      adminOrders.push(adminOrder);
+      localStorage.setItem('admin_orders', JSON.stringify(adminOrders));
+      
+      // Simulate payment processing (2 seconds)
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Salvar o ID do pedido e mostrar mensagem de sucesso
+      // Save order ID and show success message
       setOrderId(orderId);
       setShowSuccessDialog(true);
       
-      // Limpar o carrinho
+      // Clear cart
       clearCart();
       
     } catch (error) {
@@ -226,6 +267,10 @@ const Checkout = () => {
     navigate("/success");
   };
   
+  // Get the selected shipping method object
+  const currentShippingMethod = shippingMethods.find(m => m.id === selectedShippingMethod);
+  const requiresAddress = currentShippingMethod?.requires_address || false;
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
@@ -234,54 +279,8 @@ const Checkout = () => {
         <h1 className="text-3xl font-bold mb-8">Checkout</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Formulário de endereço */}
+          {/* Formulário de endereço e métodos */}
           <div className="md:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Home className="w-5 h-5" />
-                  Endereço de Entrega
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label htmlFor="street" className="text-sm font-medium mb-1 block">
-                    Rua e Número
-                  </label>
-                  <Input 
-                    id="street" 
-                    value={address.street} 
-                    onChange={(e) => handleAddressChange('street', e.target.value)}
-                    placeholder="Ex: Avenida da Liberdade, 123"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="city" className="text-sm font-medium mb-1 block">
-                    Cidade
-                  </label>
-                  <Input 
-                    id="city" 
-                    value={address.city} 
-                    onChange={(e) => handleAddressChange('city', e.target.value)}
-                    placeholder="Ex: Lisboa"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="postal_code" className="text-sm font-medium mb-1 block">
-                    Código Postal
-                  </label>
-                  <Input 
-                    id="postal_code" 
-                    value={address.postal_code} 
-                    onChange={(e) => handleAddressChange('postal_code', e.target.value)}
-                    placeholder="Ex: 1250-096"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-            
             {/* Métodos de envio */}
             <Card>
               <CardHeader>
@@ -312,7 +311,7 @@ const Checkout = () => {
                         </div>
                         <p className="text-sm text-gray-500 mt-1">{method.estimated_days}</p>
                         {method.is_test && (
-                          <p className="text-xs text-blue-600 mt-1">Opção para demonstração</p>
+                          <p className="text-xs text-blue-600 mt-1">Opção para demonstração (não requer endereço)</p>
                         )}
                       </div>
                     </div>
@@ -320,6 +319,55 @@ const Checkout = () => {
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Formulário de endereço (apenas mostrado se o método de envio selecionado exigir endereço) */}
+            {requiresAddress && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Home className="w-5 h-5" />
+                    Endereço de Entrega
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <label htmlFor="street" className="text-sm font-medium mb-1 block">
+                      Rua e Número
+                    </label>
+                    <Input 
+                      id="street" 
+                      value={address.street} 
+                      onChange={(e) => handleAddressChange('street', e.target.value)}
+                      placeholder="Ex: Avenida da Liberdade, 123"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="city" className="text-sm font-medium mb-1 block">
+                      Cidade
+                    </label>
+                    <Input 
+                      id="city" 
+                      value={address.city} 
+                      onChange={(e) => handleAddressChange('city', e.target.value)}
+                      placeholder="Ex: Lisboa"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="postal_code" className="text-sm font-medium mb-1 block">
+                      Código Postal
+                    </label>
+                    <Input 
+                      id="postal_code" 
+                      value={address.postal_code} 
+                      onChange={(e) => handleAddressChange('postal_code', e.target.value)}
+                      placeholder="Ex: 1250-096"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             
             {/* Método de pagamento */}
             <Card>
@@ -385,7 +433,7 @@ const Checkout = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   {items.map((item) => (
-                    <div key={`${item.id}-${item.size}`} className="flex justify-between">
+                    <div key={`${item.id}-${item.size}-${item.color || ''}`} className="flex justify-between">
                       <span>
                         {item.name} ({item.size}) x{item.quantity}
                       </span>

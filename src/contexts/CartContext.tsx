@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { useUser } from "@clerk/clerk-react";
@@ -19,6 +20,7 @@ interface CartContextType {
   updateQuantity: (id: string, size: string, quantity: number, color?: string) => void;
   clearCart: () => void;
   getCartTotal: () => string;
+  getCartItemCount: () => number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -137,6 +139,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     
     return `€ ${total.toFixed(2)}`;
   };
+  
+  const getCartItemCount = () => {
+    return items.reduce((count, item) => count + item.quantity, 0);
+  };
 
   return (
     <CartContext.Provider value={{
@@ -146,6 +152,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       updateQuantity,
       clearCart,
       getCartTotal,
+      getCartItemCount,
     }}>
       {children}
     </CartContext.Provider>
