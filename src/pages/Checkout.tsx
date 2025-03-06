@@ -1,12 +1,13 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
 import Navigation from "@/components/Navigation";
 import AddressForm from "@/components/checkout/AddressForm";
 import ShippingMethodSelector, { ShippingMethod } from "@/components/checkout/ShippingMethodSelector";
-import PaymentMethodSelector from "@/components/checkout/PaymentMethodSelector";
+import PaymentMethodSelector, { CardDetails, validateCardDetails } from "@/components/checkout/PaymentMethodSelector";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import SuccessDialog from "@/components/checkout/SuccessDialog";
 import DeliveryPointMap from "@/components/checkout/DeliveryPointMap";
@@ -82,6 +83,13 @@ const Checkout = () => {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [selectedDeliveryPoint, setSelectedDeliveryPoint] = useState<DeliveryPoint | null>(null);
+  const [cardDetails, setCardDetails] = useState<CardDetails>({
+    cardNumber: "",
+    cardHolder: "",
+    expiryDate: "",
+    cvv: ""
+  });
+  const [cardErrors, setCardErrors] = useState<Partial<Record<keyof CardDetails, string>>>({});
   
   const cartTotalString = getCartTotal().replace('€', '').trim();
   const cartTotal = parseFloat(cartTotalString);
@@ -135,6 +143,21 @@ const Checkout = () => {
     }));
   };
   
+  const handleCardDetailsChange = (field: keyof CardDetails, value: string) => {
+    setCardDetails(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // Clear error when typing
+    if (cardErrors[field]) {
+      setCardErrors(prev => ({
+        ...prev,
+        [field]: undefined
+      }));
+    }
+  };
+  
   const isFormValid = () => {
     if (!selectedShippingMethod) return false;
     
@@ -170,6 +193,29 @@ const Checkout = () => {
         variant: "destructive",
       });
       return;
+    }
+    
+    // Validate card details at checkout time only
+    if (paymentMethod === 'card') {
+      const { isValid, errors, isTest } = validateCardDetails(cardDetails);
+      
+      if (!isValid) {
+        setCardErrors(errors);
+        toast({
+          title: "Dados de cartão inválidos",
+          description: "Verifique os dados inseridos do cartão",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (isTest) {
+        // Only show toast for test cards once during checkout
+        toast({
+          title: "Cartão de teste detectado",
+          description: "Usando cartão de teste válido do Stripe",
+        });
+      }
     }
     
     setIsProcessing(true);
@@ -302,6 +348,9 @@ const Checkout = () => {
             <PaymentMethodSelector
               paymentMethod={paymentMethod}
               onSelectPaymentMethod={setPaymentMethod}
+              cardDetails={cardDetails}
+              onCardDetailsChange={handleCardDetailsChange}
+              errors={cardErrors}
             />
           </div>
           
