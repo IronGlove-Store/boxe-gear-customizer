@@ -1,8 +1,7 @@
-
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -10,6 +9,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,8 +20,14 @@ import {
   PlusCircle,
   Edit,
   Trash,
-  RefreshCw
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  Search,
+  User
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import customizableProducts from "@/data/customizableProducts.json";
 
 interface Product {
@@ -37,6 +43,12 @@ interface Product {
   original_price?: number;
 }
 
+interface PersonalInfo {
+  firstName: string;
+  lastName: string;
+  phone: string;
+}
+
 interface Order {
   id: string;
   status: string;
@@ -46,6 +58,8 @@ interface Order {
   shipping_method: string;
   shipping_days: string;
   user_id?: string;
+  delivery_code?: string;
+  personal_info?: PersonalInfo;
 }
 
 const initialProducts: Product[] = [
@@ -85,9 +99,9 @@ const Admin = () => {
   const { user, isSignedIn, isLoaded } = useUser();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("products");
+  const [activeTab, setActiveTab] = useState("orders");
   const [products, setProducts] = useState<Product[]>([]);
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [availableColors, setAvailableColors] = useState<{name: string, value: string}[]>([]);
@@ -104,6 +118,11 @@ const Admin = () => {
     sizes: [] as string[],
     original_price: undefined as number | undefined
   });
+  
+  const [showVerifyDialog, setShowVerifyDialog] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [deliveryCodeInput, setDeliveryCodeInput] = useState("");
+  const [deliveryCodeError, setDeliveryCodeError] = useState(false);
   
   useEffect(() => {
     setAvailableColors(customizableProducts.colors);
@@ -317,6 +336,43 @@ const Admin = () => {
       title: "Sucesso",
       description: `Status do pedido atualizado para: ${newStatus}`,
     });
+  };
+  
+  const handleVerifyOrder = (orderId: string) => {
+    setSelectedOrderId(orderId);
+    setDeliveryCodeInput("");
+    setDeliveryCodeError(false);
+    setShowVerifyDialog(true);
+  };
+  
+  const handleConfirmDeliveryCode = () => {
+    const order = orders.find(o => o.id === selectedOrderId);
+    
+    if (!order || !order.delivery_code) {
+      setDeliveryCodeError(true);
+      return;
+    }
+    
+    if (order.delivery_code.trim() === deliveryCodeInput.trim()) {
+      const updatedOrders = orders.map(o => 
+        o.id === selectedOrderId 
+          ? { ...o, status: 'completed' } 
+          : o
+      );
+      
+      saveOrders(updatedOrders);
+      
+      setShowVerifyDialog(false);
+      setSelectedOrderId(null);
+      setDeliveryCodeInput("");
+      
+      toast({
+        title: "Pedido verificado",
+        description: "Código de entrega confirmado. Pedido marcado como concluído.",
+      });
+    } else {
+      setDeliveryCodeError(true);
+    }
   };
 
   if (!isLoaded) {
@@ -624,6 +680,15 @@ const Admin = () => {
           <TabsContent value="orders" className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Gerenciar Pedidos</h2>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={loadData}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Atualizar
+              </Button>
             </div>
             
             <Card>
@@ -644,6 +709,7 @@ const Admin = () => {
                       <thead>
                         <tr className="border-b">
                           <th className="px-4 py-2 text-left">ID</th>
+                          <th className="px-4 py-2 text-left">Cliente</th>
                           <th className="px-4 py-2 text-left">Data</th>
                           <th className="px-4 py-2 text-left">Total</th>
                           <th className="px-4 py-2 text-left">Status</th>
@@ -658,6 +724,11 @@ const Admin = () => {
                           return (
                             <tr key={order.id} className="border-b">
                               <td className="px-4 py-2">#{order.id.substring(0, 8)}</td>
+                              <td className="px-4 py-2">
+                                {order.personal_info ? 
+                                  `${order.personal_info.firstName} ${order.personal_info.lastName}` : 
+                                  "Cliente"}
+                              </td>
                               <td className="px-4 py-2">{formattedDate}</td>
                               <td className="px-4 py-2">€{order.total_amount.toFixed(2)}</td>
                               <td className="px-4 py-2">
@@ -673,22 +744,51 @@ const Admin = () => {
                                 </span>
                               </td>
                               <td className="px-4 py-2 text-right">
-                                <select 
-                                  className="p-1 border rounded text-sm"
-                                  value={order.status}
-                                  onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
-                                >
-                                  <option value="pending">Pendente</option>
-                                  <option value="processing">Em Processamento</option>
-                                  <option value="completed">Concluído</option>
-                                  <option value="cancelled">Cancelado</option>
-                                </select>
+                                <div className="flex justify-end gap-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleVerifyOrder(order.id)}
+                                    title="Verificar código de entrega"
+                                  >
+                                    <CheckCircle className="h-4 w-4" />
+                                  </Button>
+                                  
+                                  <select 
+                                    className="p-1 border rounded text-sm"
+                                    value={order.status}
+                                    onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
+                                  >
+                                    <option value="pending">Pendente</option>
+                                    <option value="processing">Em Processamento</option>
+                                    <option value="completed">Concluído</option>
+                                    <option value="cancelled">Cancelado</option>
+                                  </select>
+                                </div>
                               </td>
                             </tr>
                           );
                         })}
                       </tbody>
                     </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Detalhes do Pedido</CardTitle>
+                <CardDescription>Selecione um pedido acima para ver detalhes completos</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {selectedOrderId ? (
+                  <div>
+                    {/* Order details will be displayed here */}
+                  </div>
+                ) : (
+                  <div className="text-center p-4 text-gray-500">
+                    Nenhum pedido selecionado
                   </div>
                 )}
               </CardContent>
@@ -751,6 +851,39 @@ const Admin = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      <Dialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Verificar Código de Entrega</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="mb-4">Insira o código de entrega apresentado pelo cliente:</p>
+            <Input
+              placeholder="Ex: ENT12ABC"
+              value={deliveryCodeInput}
+              onChange={(e) => {
+                setDeliveryCodeInput(e.target.value);
+                setDeliveryCodeError(false);
+              }}
+              className={deliveryCodeError ? "border-red-500" : ""}
+            />
+            {deliveryCodeError && (
+              <p className="text-red-500 text-sm mt-1">
+                Código de entrega inválido. Verifique e tente novamente.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowVerifyDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmDeliveryCode}>
+              Verificar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

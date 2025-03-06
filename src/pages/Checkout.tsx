@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
@@ -11,6 +10,7 @@ import PaymentMethodSelector, { CardDetails, validateCardDetails } from "@/compo
 import OrderSummary from "@/components/checkout/OrderSummary";
 import SuccessDialog from "@/components/checkout/SuccessDialog";
 import DeliveryPointMap from "@/components/checkout/DeliveryPointMap";
+import PersonalInfoForm from "@/components/checkout/PersonalInfoForm";
 
 const MOCK_SHIPPING_METHODS: ShippingMethod[] = [
   {
@@ -76,12 +76,19 @@ const Checkout = () => {
     country: "Portugal",
   });
   
+  const [personalInfo, setPersonalInfo] = useState({
+    firstName: "",
+    lastName: "",
+    phone: "",
+  });
+  
   const [shippingMethods] = useState<ShippingMethod[]>(MOCK_SHIPPING_METHODS);
   const [selectedShippingMethod, setSelectedShippingMethod] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string>("card");
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [deliveryCode, setDeliveryCode] = useState<string | null>(null);
   const [selectedDeliveryPoint, setSelectedDeliveryPoint] = useState<DeliveryPoint | null>(null);
   const [cardDetails, setCardDetails] = useState<CardDetails>({
     cardNumber: "",
@@ -90,6 +97,7 @@ const Checkout = () => {
     cvv: ""
   });
   const [cardErrors, setCardErrors] = useState<Partial<Record<keyof CardDetails, string>>>({});
+  const [hasShownTestCardNotice, setHasShownTestCardNotice] = useState(false);
   
   const cartTotalString = getCartTotal().replace('€', '').trim();
   const cartTotal = parseFloat(cartTotalString);
@@ -143,6 +151,13 @@ const Checkout = () => {
     }));
   };
   
+  const handlePersonalInfoChange = (field: string, value: string) => {
+    setPersonalInfo(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+  
   const handleCardDetailsChange = (field: keyof CardDetails, value: string) => {
     setCardDetails(prev => ({
       ...prev,
@@ -158,8 +173,22 @@ const Checkout = () => {
     }
   };
   
+  const generateDeliveryCode = () => {
+    // Format: ENT + 6 random alphanumeric characters
+    return "ENT" + Math.random().toString(36).substring(2, 8).toUpperCase();
+  };
+  
   const isFormValid = () => {
     if (!selectedShippingMethod) return false;
+    
+    // Check personal info
+    if (
+      personalInfo.firstName.trim() === "" ||
+      personalInfo.lastName.trim() === "" ||
+      personalInfo.phone.trim() === ""
+    ) {
+      return false;
+    }
     
     if (isPickupShipping) {
       return selectedDeliveryPoint !== null;
@@ -209,12 +238,13 @@ const Checkout = () => {
         return;
       }
       
-      if (isTest) {
+      if (isTest && !hasShownTestCardNotice) {
         // Only show toast for test cards once during checkout
         toast({
           title: "Cartão de teste detectado",
           description: "Usando cartão de teste válido do Stripe",
         });
+        setHasShownTestCardNotice(true);
       }
     }
     
@@ -222,6 +252,7 @@ const Checkout = () => {
     
     try {
       const orderId = crypto.randomUUID();
+      const deliveryCode = generateDeliveryCode();
       
       let deliveryInfo = null;
       
@@ -253,7 +284,9 @@ const Checkout = () => {
           size: item.size,
           color: item.color
         })),
+        personalInfo: { ...personalInfo },
         deliveryInfo,
+        deliveryCode,
         shippingMethod: selectedShippingMethod,
         paymentMethod: paymentMethod,
         total_amount: orderTotal,
@@ -271,6 +304,19 @@ const Checkout = () => {
       userOrders.push(order);
       localStorage.setItem(`orders-${user.id}`, JSON.stringify(userOrders));
       
+      // Save as latest order for success page
+      localStorage.setItem('latestOrder', JSON.stringify({
+        id: orderId,
+        status: paymentMethod === 'test_card' ? 'completed' : 'processing',
+        total_amount: orderTotal,
+        created_at: new Date().toISOString(),
+        payment_method: paymentMethod,
+        shipping_method: selectedShipping?.name || "Envio de Teste",
+        shipping_days: selectedShipping?.estimated_days || "Instantâneo",
+        delivery_code: deliveryCode,
+        personal_info: { ...personalInfo }
+      }));
+      
       let adminOrders = [];
       const savedAdminOrders = localStorage.getItem('admin_orders');
       
@@ -287,7 +333,13 @@ const Checkout = () => {
         shipping_method: selectedShipping?.name || "Envio de Teste",
         shipping_days: selectedShipping?.estimated_days || "Instantâneo",
         user_id: user.id,
-        delivery_type: deliveryInfo?.type
+        delivery_type: deliveryInfo?.type,
+        delivery_code: deliveryCode,
+        personal_info: {
+          firstName: personalInfo.firstName,
+          lastName: personalInfo.lastName,
+          phone: personalInfo.phone
+        }
       };
       
       adminOrders.push(adminOrder);
@@ -296,6 +348,7 @@ const Checkout = () => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       setOrderId(orderId);
+      setDeliveryCode(deliveryCode);
       setShowSuccessDialog(true);
       
       clearCart();
@@ -326,6 +379,11 @@ const Checkout = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="md:col-span-2 space-y-6">
+            <PersonalInfoForm
+              personalInfo={personalInfo}
+              onPersonalInfoChange={handlePersonalInfoChange}
+            />
+            
             <ShippingMethodSelector
               shippingMethods={shippingMethods}
               selectedShippingMethod={selectedShippingMethod}
@@ -372,6 +430,7 @@ const Checkout = () => {
         open={showSuccessDialog}
         onOpenChange={setShowSuccessDialog}
         orderId={orderId}
+        deliveryCode={deliveryCode}
         paymentMethod={paymentMethod}
         onContinue={handleCloseSuccess}
       />

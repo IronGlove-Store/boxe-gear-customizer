@@ -9,12 +9,13 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Printer } from "lucide-react";
 
 interface SuccessDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   orderId: string | null;
+  deliveryCode: string | null;
   paymentMethod: string;
   onContinue: () => void;
 }
@@ -23,6 +24,7 @@ const SuccessDialog = ({
   open, 
   onOpenChange, 
   orderId, 
+  deliveryCode,
   paymentMethod, 
   onContinue 
 }: SuccessDialogProps) => {
@@ -39,12 +41,23 @@ const SuccessDialog = ({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="py-4">
+        <div className="py-4 space-y-4">
           <p>
             {paymentMethod === 'test_card' 
               ? 'O seu pedido foi concluído utilizando o cartão de teste.'
               : 'O seu pedido está sendo processado. Você receberá uma confirmação por email.'}
           </p>
+          
+          {deliveryCode && (
+            <div className="mt-4 border p-4 rounded-md bg-gray-50">
+              <h3 className="font-bold mb-2">Código de Entrega:</h3>
+              <div className="text-2xl font-mono text-center py-2">{deliveryCode}</div>
+              <p className="text-sm text-gray-500 flex items-center gap-1 mt-2">
+                <Printer className="h-4 w-4" />
+                Por favor, guarde ou imprima este código para apresentar na recolha do seu pedido.
+              </p>
+            </div>
+          )}
         </div>
         
         <DialogFooter>
