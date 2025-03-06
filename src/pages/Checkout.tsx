@@ -11,7 +11,6 @@ import OrderSummary from "@/components/checkout/OrderSummary";
 import SuccessDialog from "@/components/checkout/SuccessDialog";
 import DeliveryPointMap from "@/components/checkout/DeliveryPointMap";
 
-// Mock shipping methods
 const MOCK_SHIPPING_METHODS: ShippingMethod[] = [
   {
     id: "standard",
