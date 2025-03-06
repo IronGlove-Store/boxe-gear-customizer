@@ -1,16 +1,16 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
 import Navigation from "@/components/Navigation";
-import AddressForm from "@/components/checkout/AddressForm";
-import ShippingMethodSelector, { ShippingMethod } from "@/components/checkout/ShippingMethodSelector";
-import PaymentMethodSelector, { CardDetails, validateCardDetails } from "@/components/checkout/PaymentMethodSelector";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import SuccessDialog from "@/components/checkout/SuccessDialog";
-import DeliveryPointMap from "@/components/checkout/DeliveryPointMap";
-import PersonalInfoForm from "@/components/checkout/PersonalInfoForm";
+import CheckoutForm from "@/components/checkout/CheckoutForm";
+import OrderProcessor from "@/components/checkout/OrderProcessor";
+import { ShippingMethod } from "@/components/checkout/ShippingMethodSelector";
+import { CardDetails } from "@/components/checkout/PaymentMethodSelector";
 
 const MOCK_SHIPPING_METHODS: ShippingMethod[] = [
   {
@@ -67,7 +67,7 @@ const Checkout = () => {
   const { user, isSignedIn } = useUser();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { items, getCartTotal, clearCart } = useCart();
+  const { items, getCartTotal } = useCart();
   
   const [address, setAddress] = useState({
     street: "",
@@ -108,7 +108,6 @@ const Checkout = () => {
   
   const currentShippingMethod = shippingMethods.find(m => m.id === selectedShippingMethod);
   const requiresAddress = currentShippingMethod?.requires_address || false;
-  const isTestShipping = currentShippingMethod?.is_test || false;
   const isPickupShipping = selectedShippingMethod === 'pickup';
   
   useEffect(() => {
@@ -172,35 +171,6 @@ const Checkout = () => {
     }
   };
   
-  const generateDeliveryCode = () => {
-    const generateLetters = () => {
-      let result = '';
-      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      for (let i = 0; i < 6; i++) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
-      }
-      return result;
-    };
-    
-    let code = generateLetters();
-    
-    const positions = [];
-    while (positions.length < 2) {
-      const pos = Math.floor(Math.random() * 6);
-      if (!positions.includes(pos)) {
-        positions.push(pos);
-      }
-    }
-    
-    const codeArray = code.split('');
-    
-    positions.forEach(pos => {
-      codeArray[pos] = Math.floor(Math.random() * 10).toString();
-    });
-    
-    return codeArray.join('');
-  };
-  
   const isFormValid = () => {
     if (!selectedShippingMethod) return false;
     
@@ -216,7 +186,7 @@ const Checkout = () => {
       return selectedDeliveryPoint !== null;
     }
     
-    if (requiresAddress && !isTestShipping) {
+    if (requiresAddress && !currentShippingMethod?.is_test) {
       return (
         address.street.trim() !== "" &&
         address.city.trim() !== "" &&
@@ -227,167 +197,35 @@ const Checkout = () => {
     return true;
   };
   
-  const handlePlaceOrder = async () => {
-    if (!isFormValid()) {
-      toast({
-        title: "Formulário incompleto",
-        description: "Preencha todos os campos obrigatórios.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!user || !isSignedIn) {
-      toast({
-        title: "Autenticação necessária",
-        description: "Precisas estar autenticado para finalizar a compra.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (paymentMethod === 'card') {
-      const { isValid, errors, isTest } = validateCardDetails(cardDetails);
-      
-      if (!isValid) {
-        setCardErrors(errors);
-        toast({
-          title: "Dados de cartão inválidos",
-          description: "Verifique os dados inseridos do cartão",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      if (isTest && !hasShownTestCardNotice) {
-        toast({
-          title: "Cartão de teste detectado",
-          description: "Usando cartão de teste válido do Stripe",
-        });
-        setHasShownTestCardNotice(true);
-      }
-    }
-    
-    setIsProcessing(true);
-    
-    try {
-      const orderId = crypto.randomUUID();
-      const deliveryCode = generateDeliveryCode();
-      
-      let deliveryInfo = null;
-      
-      if (isPickupShipping && selectedDeliveryPoint) {
-        deliveryInfo = {
-          type: "pickup",
-          deliveryPoint: selectedDeliveryPoint
-        };
-      } else if (requiresAddress && !isTestShipping) {
-        deliveryInfo = {
-          type: "address",
-          address: { ...address }
-        };
-      } else {
-        deliveryInfo = {
-          type: "test",
-          note: "Envio de teste (sem endereço)"
-        };
-      }
-      
-      const order = {
-        id: orderId,
-        userId: user.id,
-        items: items.map(item => ({
-          productId: item.id,
-          name: item.name,
-          price: parseFloat(item.price.replace('€', '').trim()),
-          quantity: item.quantity,
-          size: item.size,
-          color: item.color
-        })),
-        personalInfo: { ...personalInfo },
-        deliveryInfo,
-        deliveryCode,
-        shippingMethod: selectedShippingMethod,
-        paymentMethod: paymentMethod,
-        total_amount: orderTotal,
-        status: paymentMethod === 'test_card' ? 'completed' : 'processing',
-        created_at: new Date().toISOString()
-      };
-      
-      let userOrders = [];
-      const savedOrders = localStorage.getItem(`orders-${user.id}`);
-      
-      if (savedOrders) {
-        userOrders = JSON.parse(savedOrders);
-      }
-      
-      userOrders.push(order);
-      localStorage.setItem(`orders-${user.id}`, JSON.stringify(userOrders));
-      
-      localStorage.setItem('latestOrder', JSON.stringify({
-        id: orderId,
-        status: paymentMethod === 'test_card' ? 'completed' : 'processing',
-        total_amount: orderTotal,
-        created_at: new Date().toISOString(),
-        payment_method: paymentMethod,
-        shipping_method: selectedShipping?.name || "Envio de Teste",
-        shipping_days: selectedShipping?.estimated_days || "Instantâneo",
-        delivery_code: deliveryCode,
-        personal_info: { ...personalInfo }
-      }));
-      
-      let adminOrders = [];
-      const savedAdminOrders = localStorage.getItem('admin_orders');
-      
-      if (savedAdminOrders) {
-        adminOrders = JSON.parse(savedAdminOrders);
-      }
-      
-      const adminOrder = {
-        id: orderId,
-        status: paymentMethod === 'test_card' ? 'completed' : 'processing',
-        total_amount: orderTotal,
-        created_at: new Date().toISOString(),
-        payment_method: paymentMethod,
-        shipping_method: selectedShipping?.name || "Envio de Teste",
-        shipping_days: selectedShipping?.estimated_days || "Instantâneo",
-        user_id: user.id,
-        delivery_type: deliveryInfo?.type,
-        delivery_code: deliveryCode,
-        personal_info: {
-          firstName: personalInfo.firstName,
-          lastName: personalInfo.lastName,
-          phone: personalInfo.phone
-        }
-      };
-      
-      adminOrders.push(adminOrder);
-      localStorage.setItem('admin_orders', JSON.stringify(adminOrders));
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setOrderId(orderId);
-      setDeliveryCode(deliveryCode);
-      setShowSuccessDialog(true);
-      
-      clearCart();
-      
-    } catch (error) {
-      console.error('Erro ao processar pedido:', error);
-      toast({
-        title: "Erro no processamento",
-        description: "Ocorreu um erro ao processar o pedido. Por favor, tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
+  const handleOrderSuccess = (newOrderId: string, newDeliveryCode: string) => {
+    setOrderId(newOrderId);
+    setDeliveryCode(newDeliveryCode);
+    setShowSuccessDialog(true);
   };
   
   const handleCloseSuccess = () => {
     setShowSuccessDialog(false);
     navigate("/success");
   };
+  
+  const { handlePlaceOrder } = OrderProcessor({
+    personalInfo,
+    address,
+    selectedShippingMethod,
+    paymentMethod,
+    cardDetails, 
+    selectedDeliveryPoint,
+    cartTotal,
+    shippingCost,
+    orderTotal,
+    shippingMethods,
+    isFormValid: isFormValid(),
+    onSuccess: handleOrderSuccess,
+    setIsProcessing,
+    isProcessing,
+    hasShownTestCardNotice,
+    setHasShownTestCardNotice
+  });
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -397,39 +235,22 @@ const Checkout = () => {
         <h1 className="text-3xl font-bold mb-8">Checkout</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-2 space-y-6">
-            <PersonalInfoForm
-              personalInfo={personalInfo}
-              onPersonalInfoChange={handlePersonalInfoChange}
-            />
-            
-            <ShippingMethodSelector
-              shippingMethods={shippingMethods}
-              selectedShippingMethod={selectedShippingMethod}
-              onSelectShippingMethod={setSelectedShippingMethod}
-            />
-            
-            <DeliveryPointMap
-              isRequired={isPickupShipping}
-              selectedDeliveryPoint={selectedDeliveryPoint}
-              onSelectDeliveryPoint={setSelectedDeliveryPoint}
-            />
-            
-            {requiresAddress && !isTestShipping && (
-              <AddressForm
-                address={address}
-                onAddressChange={handleAddressChange}
-              />
-            )}
-            
-            <PaymentMethodSelector
-              paymentMethod={paymentMethod}
-              onSelectPaymentMethod={setPaymentMethod}
-              cardDetails={cardDetails}
-              onCardDetailsChange={handleCardDetailsChange}
-              errors={cardErrors}
-            />
-          </div>
+          <CheckoutForm 
+            personalInfo={personalInfo}
+            address={address}
+            shippingMethods={shippingMethods}
+            selectedShippingMethod={selectedShippingMethod}
+            paymentMethod={paymentMethod}
+            cardDetails={cardDetails}
+            selectedDeliveryPoint={selectedDeliveryPoint}
+            cardErrors={cardErrors}
+            onPersonalInfoChange={handlePersonalInfoChange}
+            onAddressChange={handleAddressChange}
+            onSelectShippingMethod={setSelectedShippingMethod}
+            onSelectPaymentMethod={setPaymentMethod}
+            onCardDetailsChange={handleCardDetailsChange}
+            onSelectDeliveryPoint={setSelectedDeliveryPoint}
+          />
           
           <div>
             <OrderSummary
