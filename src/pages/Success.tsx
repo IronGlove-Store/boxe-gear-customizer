@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,6 @@ import Navigation from "@/components/Navigation";
 import { CheckCircle, Package, Truck, ArrowRight, Printer, User } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
 
-// Interface para o estado que armazenamos
 interface Order {
   id: string;
   status: string;
@@ -32,17 +30,14 @@ const Success = () => {
   const [latestOrder, setLatestOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Simular busca de pedido usando localStorage
   useEffect(() => {
     async function fetchLatestOrder() {
       try {
-        // Tentar buscar o último pedido do localStorage
         const storedOrder = localStorage.getItem('latestOrder');
         
         if (storedOrder) {
           setLatestOrder(JSON.parse(storedOrder));
         } else {
-          // Se não encontrar no localStorage, usar dados simulados
           const mockOrder = {
             id: "temp" + Math.random().toString(36).substring(2, 15),
             status: "processing",
@@ -54,13 +49,11 @@ const Success = () => {
             delivery_code: "ENT" + Math.random().toString(36).substring(2, 8).toUpperCase()
           };
           
-          // Guardar no localStorage para futuras visitas
           localStorage.setItem('latestOrder', JSON.stringify(mockOrder));
           setLatestOrder(mockOrder);
         }
       } catch (error) {
         console.error('Erro ao buscar pedido:', error);
-        // Se houver erro, mostrar dados simulados
         const mockOrder = {
           id: "temp" + Math.random().toString(36).substring(2, 15),
           status: "processing",
@@ -81,11 +74,9 @@ const Success = () => {
 
     fetchLatestOrder();
     
-    // Limpar o carrinho quando o componente for montado
     clearCart();
   }, [clearCart]);
 
-  // Formatação de data
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-PT', {
@@ -95,7 +86,6 @@ const Success = () => {
     });
   };
 
-  // Função para imprimir o código de entrega
   const handlePrintDeliveryCode = () => {
     if (!latestOrder?.delivery_code) return;
     

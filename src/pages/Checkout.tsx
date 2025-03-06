@@ -164,7 +164,6 @@ const Checkout = () => {
       [field]: value
     }));
     
-    // Clear error when typing
     if (cardErrors[field]) {
       setCardErrors(prev => ({
         ...prev,
@@ -174,14 +173,37 @@ const Checkout = () => {
   };
   
   const generateDeliveryCode = () => {
-    // Format: ENT + 6 random alphanumeric characters
-    return "ENT" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const generateLetters = () => {
+      let result = '';
+      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      for (let i = 0; i < 6; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+      }
+      return result;
+    };
+    
+    let code = generateLetters();
+    
+    const positions = [];
+    while (positions.length < 2) {
+      const pos = Math.floor(Math.random() * 6);
+      if (!positions.includes(pos)) {
+        positions.push(pos);
+      }
+    }
+    
+    const codeArray = code.split('');
+    
+    positions.forEach(pos => {
+      codeArray[pos] = Math.floor(Math.random() * 10).toString();
+    });
+    
+    return codeArray.join('');
   };
   
   const isFormValid = () => {
     if (!selectedShippingMethod) return false;
     
-    // Check personal info
     if (
       personalInfo.firstName.trim() === "" ||
       personalInfo.lastName.trim() === "" ||
@@ -224,7 +246,6 @@ const Checkout = () => {
       return;
     }
     
-    // Validate card details at checkout time only
     if (paymentMethod === 'card') {
       const { isValid, errors, isTest } = validateCardDetails(cardDetails);
       
@@ -239,7 +260,6 @@ const Checkout = () => {
       }
       
       if (isTest && !hasShownTestCardNotice) {
-        // Only show toast for test cards once during checkout
         toast({
           title: "Cartão de teste detectado",
           description: "Usando cartão de teste válido do Stripe",
@@ -304,7 +324,6 @@ const Checkout = () => {
       userOrders.push(order);
       localStorage.setItem(`orders-${user.id}`, JSON.stringify(userOrders));
       
-      // Save as latest order for success page
       localStorage.setItem('latestOrder', JSON.stringify({
         id: orderId,
         status: paymentMethod === 'test_card' ? 'completed' : 'processing',
