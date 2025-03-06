@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
 import Navigation from "@/components/Navigation";
-import { CheckCircle, Package, Truck, ArrowRight, Printer } from "lucide-react";
+import { CheckCircle, Package, Truck, ArrowRight, Printer, User } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
 
 // Interface para o estado que armazenamos
